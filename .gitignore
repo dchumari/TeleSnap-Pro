@@ -1,0 +1,29 @@
+# Compiled binaries
+*.ex5
+*.ex4
+
+# MetaEditor files
+*.log
+*.bak
+*.tmp
+*.crx
+*.cache
+
+# Secrets & Configuration
+*.env
+credentials.json
+bot_token.txt
+secret_config.ini
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
