@@ -150,9 +150,19 @@ void OnTimer()
 }
 
 //+------------------------------------------------------------------+
+//| Overload for manual trigger without preloaded signal             |
+//+------------------------------------------------------------------+
+void ExecuteSnapAndSend(const string triggerSource)
+{
+   TradeSignalInfo emptySignal;
+   ZeroMemory(emptySignal);
+   ExecuteSnapAndSend(triggerSource, emptySignal);
+}
+
+//+------------------------------------------------------------------+
 //| Core Action: Snap Chart, Overlay Watermark & Dispatch            |
 //+------------------------------------------------------------------+
-void ExecuteSnapAndSend(const string triggerSource, const TradeSignalInfo &preloadedSignal = NULL)
+void ExecuteSnapAndSend(const string triggerSource, const TradeSignalInfo &preloadedSignal)
 {
    uint startTime = GetTickCount();
    g_ui.SetStateProcessing();
