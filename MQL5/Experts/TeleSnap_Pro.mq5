@@ -81,6 +81,7 @@ uint                 g_lastDispatchTick = 0;
 //--- Active state & credentials
 string            g_activeBotToken     = "";
 string            g_activeChatId       = "";
+long              g_activeThreadId     = 0;
 string            g_activeChannel      = "";
 string            g_activeInvite       = "";
 long              g_lastTriggeredChart = 0;
@@ -114,6 +115,7 @@ int OnInit()
    // 3. Resolve Credentials (Input vs Auto-Loaded Local Storage)
    g_activeBotToken = InpBotToken;
    g_activeChatId   = InpChatId;
+   g_activeThreadId = InpMessageThreadId;
    g_activeChannel  = InpChannelTag;
    g_activeInvite   = InpInviteLink;
 
@@ -125,27 +127,49 @@ int OnInit()
    // If user provided IDs in inputs dialog, save locally for all other charts
    if(StringLen(g_activeBotToken) > 0 && StringLen(g_activeChatId) > 0)
    {
-      g_storage.SaveCredentials(g_activeBotToken, g_activeChatId, g_activeChannel, g_activeInvite);
-      Print("[TeleSnap Pro] 💾 Saved Bot Token and Chat ID locally. All other charts will auto-load them!");
+      g_storage.SaveCredentials(g_activeBotToken, g_activeChatId, g_activeChannel, g_activeInvite, g_activeThreadId);
+      string tMsg = (g_activeThreadId > 0) ? (" (Topic ID: " + IntegerToString(g_activeThreadId) + ")") : "";
+      PrintFormat("[TeleSnap Pro] 💾 Saved Bot Token, Chat ID%s locally. All other charts will auto-load them!", tMsg);
    }
    else
    {
       string savedToken = "", savedChat = "", savedTag = "", savedLink = "";
-      if(g_storage.LoadCredentials(savedToken, savedChat, savedTag, savedLink))
+      long savedThread = 0;
+      if(g_storage.LoadCredentials(savedToken, savedChat, savedTag, savedLink, savedThread))
       {
          g_activeBotToken = savedToken;
-         g_activeChatId   = savedChat;
+
+         // Group-Binding Protection:
+         // If user entered a Chat ID manually and it differs from savedChat, do NOT attach the old group's thread!
+         if(StringLen(g_activeChatId) == 0)
+         {
+            g_activeChatId = savedChat;
+            if(g_activeThreadId == 0)
+               g_activeThreadId = savedThread;
+         }
+         else if(g_activeChatId == savedChat)
+         {
+            if(g_activeThreadId == 0)
+               g_activeThreadId = savedThread;
+         }
+         else
+         {
+            PrintFormat("[TeleSnap Pro] ℹ️ Custom Chat ID (%s) differs from saved (%s). Topic ID reset to prevent cross-group conflict.",
+                        g_activeChatId, savedChat);
+         }
+
          if(StringLen(savedTag) > 0 && (StringLen(InpChannelTag) == 0 || InpChannelTag == "@MyVIPSignals"))
             g_activeChannel = savedTag;
          if(StringLen(savedLink) > 0 && (StringLen(InpInviteLink) == 0 || InpInviteLink == "https://t.me/"))
             g_activeInvite = savedLink;
 
-         PrintFormat("[TeleSnap Pro] ✅ Auto-loaded credentials from local storage! Target: %s", g_activeChatId);
+         string topicStr = (g_activeThreadId > 0) ? (" | Topic ID: " + IntegerToString(g_activeThreadId)) : "";
+         PrintFormat("[TeleSnap Pro] ✅ Auto-loaded credentials from local storage! Target: %s%s", g_activeChatId, topicStr);
       }
    }
 
    // 4. Initialize Telegram Client & Branding
-   g_telegram.Init(g_activeBotToken, g_activeChatId, InpTimeoutMs, InpMessageThreadId);
+   g_telegram.Init(g_activeBotToken, g_activeChatId, InpTimeoutMs, g_activeThreadId);
    g_watermark.SetBranding(g_activeChannel, g_activeInvite);
 
    // 5. Preflight Connection Diagnostic Test
