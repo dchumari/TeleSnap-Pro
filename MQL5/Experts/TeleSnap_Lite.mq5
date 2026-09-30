@@ -5,9 +5,9 @@
 //+------------------------------------------------------------------+
 #property copyright   "Copyright 2026, Derrick Chumari."
 #property link        "https://github.com/dchumari/TeleSnap-Pro"
-#property version     "1.22"
-#property description "⚡ TeleSnap Lite: Free Chart Snapper for Telegram"
-#property description "Free Edition with viral watermarking. Snap and send charts to Telegram with one click."
+#property version     "2.00"
+#property description "⚡ TeleSnap Lite: Free Multi-Chart Command Center & Signal Dispatcher"
+#property description "Free Edition with viral watermarking. Centralized hub for multi-chart remote snapping to Telegram."
 #property strict
 
 //--- Include core modules
@@ -18,10 +18,15 @@
 #include <TeleSnap/Watermark.mqh>
 #include <TeleSnap/UI.mqh>
 #include <TeleSnap/TradeMonitor.mqh>
+#include <TeleSnap/HubManager.mqh>
 
 //+------------------------------------------------------------------+
 //| Input Parameters (Lite Edition: Watermark is Locked)             |
 //+------------------------------------------------------------------+
+input group "=== ⚡ Multi-Chart Command Center Hub ==="
+input bool                   InpEnableCommandCenter = true;             // Enable Command Center Dashboard Mode
+input bool                   InpAutoLinkOpenCharts  = true;             // Auto-Link Open Trading Charts in Terminal
+
 input group "=== 🤖 Telegram Bot Configuration ==="
 input string                 InpBotToken       = "";                      // Bot API Token (Leave blank to auto-load saved ID)
 input string                 InpChatId         = "";                      // Channel/Group Chat ID (Leave blank to auto-load saved ID)
@@ -40,7 +45,7 @@ input ENUM_CAPTURE_TRIGGER   InpTriggerMode    = TRIGGER_AUTO_ALL_EVENTS; // Cap
 input ulong                  InpMagicFilter    = 0;                       // Filter by EA Magic Number (0 = All Trades & EAs)
 input int                    InpHotkeyKey      = 123;                     // Keyboard Hotkey (123 = F12)
 
-input group "=== 🖥️ Floating HUD Settings ==="
+input group "=== 🖥️ Floating HUD Settings (Single Chart Mode) ==="
 input int                    InpHudX           = 30;                      // HUD Button X Offset (Pixels)
 input int                    InpHudY           = 50;                      // HUD Button Y Offset (Pixels)
 
@@ -51,15 +56,18 @@ CChartCapture     g_capture;
 CWatermarkEngine  g_watermark;
 CTeleSnapUI       g_ui;
 CTradeMonitor     g_monitor;
+CHubManager       g_hub;
 
 //--- Active state & credentials
-string            g_activeBotToken = "";
-string            g_activeChatId   = "";
-datetime          g_lastResetTime  = 0;
-bool              g_needsReset     = false;
+string            g_activeBotToken     = "";
+string            g_activeChatId       = "";
+long              g_lastTriggeredChart = 0;
+datetime          g_lastResetTime      = 0;
+bool              g_needsReset         = false;
 
 //--- Forward declarations
-void ExecuteSnapAndSend(const string triggerSource, const string userNote, const TradeSignalInfo &preloadedSignal);
+void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, const string userNote, const TradeSignalInfo &preloadedSignal);
+void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, const string userNote = "");
 void ExecuteSnapAndSend(const string triggerSource, const string userNote = "");
 
 //+------------------------------------------------------------------+
@@ -68,7 +76,7 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote = "");
 int OnInit()
 {
    Print("=================================================");
-   Print("⚡ Initializing TeleSnap Lite v1.22 (Free MQL5 Edition)");
+   Print("⚡ Initializing TeleSnap Lite v2.00 (Command Center Hub)");
    Print("=================================================");
 
    // 1. Strictly enforce LITE MODE (Watermark is locked)
@@ -98,7 +106,6 @@ int OnInit()
    }
    else
    {
-      // Inputs are blank -> Automatically load saved credentials from local PC storage!
       string savedToken = "", savedChat = "", savedTag = "", savedLink = "";
       if(g_storage.LoadCredentials(savedToken, savedChat, savedTag, savedLink))
       {
@@ -111,29 +118,45 @@ int OnInit()
    // 4. Initialize Telegram client
    g_telegram.Init(g_activeBotToken, g_activeChatId, InpTimeoutMs);
 
-   // 5. Initialize Floating HUD Button & Note Box
-   if(!g_ui.Create(0, InpHudX, InpHudY, InpHotkeyKey))
-   {
-      Print("[TeleSnap Lite] Warning: Could not create on-chart HUD controls.");
-   }
-
-   // 6. Initialize Trade Monitor
-   g_monitor.Init(_Symbol, (ENUM_TIMEFRAMES)_Period, InpMagicFilter);
-
-   // 7. Preflight Connection Diagnostic Test
+   // 5. Preflight Connection Diagnostic Test
    string botUsername = "", chatTitle = "", errorDetails = "";
    bool connected = g_telegram.TestConnection(botUsername, chatTitle, errorDetails);
 
-   if(connected)
+   // 6. Initialize Command Center Hub or Single Chart Mode
+   if(InpEnableCommandCenter)
    {
       string connTarget = (StringLen(chatTitle) > 0) ? chatTitle : g_telegram.GetChatId();
-      g_ui.ResetState(connTarget);
-      PrintFormat("[TeleSnap Lite] ✅ TELEGRAM CONNECTED! Bot: @%s | Target Chat: %s", botUsername, connTarget);
+      g_hub.Init(ChartID(), botUsername, connTarget, connected);
+      Print("[TeleSnap Lite] ⚡ Command Center & Multi-Chart Hub Activated!");
+   }
+   else
+   {
+      if(!g_ui.Create(0, InpHudX, InpHudY, InpHotkeyKey))
+      {
+         Print("[TeleSnap Lite] Warning: Could not create on-chart HUD controls.");
+      }
+
+      if(connected)
+      {
+         string connTarget = (StringLen(chatTitle) > 0) ? chatTitle : g_telegram.GetChatId();
+         g_ui.ResetState(connTarget);
+      }
+      else
+      {
+         g_ui.SetStateFailed("Not Connected");
+      }
+   }
+
+   // 7. Initialize Trade Monitor
+   g_monitor.Init(_Symbol, (ENUM_TIMEFRAMES)_Period, InpMagicFilter);
+
+   if(connected)
+   {
+      PrintFormat("[TeleSnap Lite] ✅ TELEGRAM CONNECTED! Bot: @%s | Target Chat: %s", botUsername, chatTitle);
       Comment("");
    }
    else
    {
-      g_ui.SetStateFailed("Not Connected");
       PrintFormat("[TeleSnap Lite] ⚠️ TELEGRAM SETUP REQUIRED:\n%s", errorDetails);
       Comment("⚠️ TeleSnap Setup: " + errorDetails);
    }
@@ -144,7 +167,8 @@ int OnInit()
       Print("[TeleSnap Lite] 💾 Saved current chart as MT5 'default.tpl'.");
    }
 
-   EventSetTimer(1);
+   // High-frequency 80ms timer for instant remote button clicks
+   EventSetMillisecondTimer(80);
    return(INIT_SUCCEEDED);
 }
 
@@ -154,6 +178,8 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    EventKillTimer();
+   if(InpEnableCommandCenter)
+      g_hub.Destroy();
    g_ui.Destroy();
    g_watermark.RemoveOnChartWatermark(0);
    Comment("");
@@ -161,32 +187,41 @@ void OnDeinit(const int reason)
 }
 
 //+------------------------------------------------------------------+
-//| Chart Event handler (Clicks, Hotkeys & On-Chart Note Input)      |
+//| Chart Event handler (Dashboard Clicks, Hotkeys & Remote Toggles) |
 //+------------------------------------------------------------------+
 void OnChartEvent(const int id,
                   const long &lparam,
                   const double &dparam,
                   const string &sparam)
 {
+   if(InpEnableCommandCenter)
+   {
+      if(id == CHARTEVENT_OBJECT_CLICK)
+      {
+         if(g_hub.HandleDashboardClick(sparam))
+            return;
+      }
+   }
+
+   // Local trigger check (if single-chart HUD or hotkey pressed on host chart)
    int trigger = g_ui.CheckTrigger(id, lparam, dparam, sparam);
 
    if(trigger == 1) // Quick Snap [F12]
    {
       string userNote = g_ui.GetUserNote();
-      ExecuteSnapAndSend("MANUAL_SNAP", userNote);
+      ExecuteSnapAndSend(ChartID(), "MANUAL_SNAP", userNote);
    }
    else if(trigger == 2) // Send With Note
    {
       string userNote = g_ui.GetUserNote();
       if(StringLen(userNote) == 0)
       {
-         // Highlight note box and DO NOT send
          g_ui.HighlightNoteRequired();
          Print("[TeleSnap Lite] ⚠️ 'SEND + NOTE' clicked without a note. Highlighted note box.");
          return;
       }
 
-      ExecuteSnapAndSend("MANUAL_NOTE_SNAP", userNote);
+      ExecuteSnapAndSend(ChartID(), "MANUAL_NOTE_SNAP", userNote);
       g_ui.ResetNoteBox(true);
    }
 }
@@ -209,57 +244,118 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
       if(InpTriggerMode == TRIGGER_AUTO_ON_ENTRY && eventReason != "TRADE_OPEN")
          return;
 
-      ExecuteSnapAndSend(eventReason, "", signal);
+      // Smart Cross-Chart Targeting: Find the linked chart for this symbol (e.g. Algo Chart with boxes!)
+      long targetChartId = 0;
+      if(InpEnableCommandCenter)
+      {
+         targetChartId = g_hub.FindLinkedChartForSymbol(signal.symbol);
+      }
+
+      if(targetChartId == 0)
+         targetChartId = ChartID();
+
+      ExecuteSnapAndSend(targetChartId, eventReason, "", signal);
    }
 }
 
 //+------------------------------------------------------------------+
-//| Timer function for resetting HUD state                           |
+//| Timer function: Polls remote buttons & scans open charts         |
 //+------------------------------------------------------------------+
 void OnTimer()
 {
+   if(InpEnableCommandCenter)
+   {
+      // 1. High-speed check for remote button clicks across all linked charts
+      long targetChartId = 0;
+      string remoteNote = "";
+      int trigger = g_hub.CheckRemoteTriggers(targetChartId, remoteNote);
+
+      if(trigger == 1) // Quick Snap clicked on a remote linked chart
+      {
+         ExecuteSnapAndSend(targetChartId, "REMOTE_SNAP", remoteNote);
+      }
+      else if(trigger == 2) // Send with Note clicked on a remote linked chart
+      {
+         ExecuteSnapAndSend(targetChartId, "REMOTE_NOTE_SNAP", remoteNote);
+      }
+
+      // 2. Periodic rescan of terminal charts (every 2.5 seconds)
+      static uint s_lastScanTick = 0;
+      if(GetTickCount() - s_lastScanTick >= 2500)
+      {
+         g_hub.RefreshCharts(InpAutoLinkOpenCharts);
+         s_lastScanTick = GetTickCount();
+      }
+   }
+
+   // 3. Reset button states after 3 seconds
    if(g_needsReset && TimeCurrent() - g_lastResetTime >= 3)
    {
-      g_ui.ResetState(g_telegram.GetChatId());
+      if(InpEnableCommandCenter)
+      {
+         if(g_lastTriggeredChart > 0)
+            g_hub.ResetRemoteState(g_lastTriggeredChart);
+      }
+      else
+      {
+         g_ui.ResetState(g_telegram.GetChatId());
+      }
       g_needsReset = false;
    }
 }
 
 //+------------------------------------------------------------------+
-//| Overload for manual trigger without preloaded signal             |
+//| Overloads for manual trigger                                     |
 //+------------------------------------------------------------------+
 void ExecuteSnapAndSend(const string triggerSource, const string userNote)
 {
    TradeSignalInfo emptySignal;
    ZeroMemory(emptySignal);
-   ExecuteSnapAndSend(triggerSource, userNote, emptySignal);
+   ExecuteSnapAndSend(ChartID(), triggerSource, userNote, emptySignal);
+}
+
+void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, const string userNote)
+{
+   TradeSignalInfo emptySignal;
+   ZeroMemory(emptySignal);
+   ExecuteSnapAndSend(targetChartId, triggerSource, userNote, emptySignal);
 }
 
 //+------------------------------------------------------------------+
-//| Core Action: Snap Chart, Overlay Locked Watermark & Dispatch     |
+//| Core Action: Snap Target Chart, Overlay Watermark & Dispatch     |
 //+------------------------------------------------------------------+
-void ExecuteSnapAndSend(const string triggerSource, const string userNote, const TradeSignalInfo &preloadedSignal)
+void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, const string userNote, const TradeSignalInfo &preloadedSignal)
 {
    uint startTime = GetTickCount();
-   g_ui.SetStateProcessing();
+   long activeTarget = (targetChartId > 0) ? targetChartId : ChartID();
+   string targetSymbol = ChartSymbol(activeTarget);
+   if(StringLen(targetSymbol) == 0) targetSymbol = _Symbol;
+   ENUM_TIMEFRAMES targetTf = ChartPeriod(activeTarget);
+   if(targetTf == 0) targetTf = (ENUM_TIMEFRAMES)_Period;
+
+   if(InpEnableCommandCenter)
+      g_hub.SetRemoteStateProcessing(activeTarget);
+   else
+      g_ui.SetStateProcessing();
 
    TradeSignalInfo signal;
 
+   // 1. Gather rich trade details
    if(StringLen(preloadedSignal.symbol) > 0)
    {
       signal = preloadedSignal;
    }
    else
    {
-      if(!g_monitor.GetActivePositionSignal(signal))
+      if(!g_monitor.GetActivePositionSignal(targetSymbol, targetTf, signal))
       {
-         if(!g_monitor.GetPendingOrderSignal(signal))
+         if(!g_monitor.GetPendingOrderSignal(targetSymbol, targetTf, signal))
          {
-            signal.symbol = _Symbol;
-            signal.timeframe = (ENUM_TIMEFRAMES)_Period;
+            signal.symbol = targetSymbol;
+            signal.timeframe = targetTf;
             signal.status = "WATCHLIST";
             signal.orderType = "MARKET SETUP";
-            signal.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+            signal.entryPrice = SymbolInfoDouble(targetSymbol, SYMBOL_BID);
             signal.currentPrice = signal.entryPrice;
             signal.stopLoss = 0;
             signal.takeProfit = 0;
@@ -269,10 +365,10 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote, const
             signal.floatingPips = 0;
             signal.signalTime = TimeCurrent();
 
-            double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-            int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+            double point = SymbolInfoDouble(targetSymbol, SYMBOL_POINT);
+            int digits = (int)SymbolInfoInteger(targetSymbol, SYMBOL_DIGITS);
             double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
-            long spreadPts = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+            long spreadPts = SymbolInfoInteger(targetSymbol, SYMBOL_SPREAD);
             signal.spreadPips = (pipSize > 0) ? (spreadPts * point) / pipSize : 0;
          }
       }
@@ -284,20 +380,30 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote, const
    }
 
    // 2. Draw locked watermark ("Powered by TeleSnap Pro")
-   g_watermark.DrawOnChartWatermark(0, InpWatermarkPos, clrDodgerBlue);
+   g_watermark.DrawOnChartWatermark(activeTarget, InpWatermarkPos, clrDodgerBlue);
 
    // 3. Capture high-resolution screenshot into memory buffer
    uchar photoBytes[];
-   bool captured = g_capture.CaptureChartToBuffer(0, InpResolution, photoBytes);
+   bool captured = g_capture.CaptureChartToBuffer(activeTarget, InpResolution, photoBytes);
 
    // Clean up temporary watermark
-   g_watermark.RemoveOnChartWatermark(0);
+   g_watermark.RemoveOnChartWatermark(activeTarget);
 
    if(!captured)
    {
-      Print("[TeleSnap Lite] Capture failed. Aborting send.");
-      g_ui.SetStateFailed("Capture Failed");
+      PrintFormat("[TeleSnap Lite] Capture failed for Chart ID %I64d. Aborting send.", activeTarget);
+      if(InpEnableCommandCenter)
+      {
+         g_hub.SetRemoteStateFailed(activeTarget, "Capture Failed");
+         g_hub.AddLog(signal.symbol, "Capture Failed", 0, false);
+      }
+      else
+      {
+         g_ui.SetStateFailed("Capture Failed");
+      }
+
       g_lastResetTime = TimeCurrent();
+      g_lastTriggeredChart = activeTarget;
       g_needsReset = true;
       return;
    }
@@ -312,18 +418,35 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote, const
 
    if(success)
    {
-      PrintFormat("[TeleSnap Lite] ✅ Dispatched in %u ms to %s! [Trigger: %s]", elapsedMs, g_telegram.GetChatId(), triggerSource);
-      g_ui.SetStateSuccess(elapsedMs, g_telegram.GetChatId());
+      PrintFormat("[TeleSnap Lite] ✅ Dispatched in %u ms to %s! [Trigger: %s | Target Chart: %I64d]", elapsedMs, g_telegram.GetChatId(), triggerSource, activeTarget);
+      if(InpEnableCommandCenter)
+      {
+         g_hub.SetRemoteStateSuccess(activeTarget, elapsedMs, g_telegram.GetChatId());
+         g_hub.AddLog(signal.symbol, signal.orderType, elapsedMs, true);
+      }
+      else
+      {
+         g_ui.SetStateSuccess(elapsedMs, g_telegram.GetChatId());
+      }
       Comment("");
    }
    else
    {
       PrintFormat("[TeleSnap Lite] ❌ Dispatch failed: %s", errorMsg);
-      g_ui.SetStateFailed("Send Failed");
+      if(InpEnableCommandCenter)
+      {
+         g_hub.SetRemoteStateFailed(activeTarget, "Send Failed");
+         g_hub.AddLog(signal.symbol, "Send Failed: " + errorMsg, elapsedMs, false);
+      }
+      else
+      {
+         g_ui.SetStateFailed("Send Failed");
+      }
       Comment("⚠️ TeleSnap Error: " + errorMsg);
    }
 
    g_lastResetTime = TimeCurrent();
+   g_lastTriggeredChart = activeTarget;
    g_needsReset = true;
 }
 //+------------------------------------------------------------------+

@@ -105,6 +105,18 @@ public:
       return true;
    }
 
+   bool GetActivePositionSignal(const string symbol, const ENUM_TIMEFRAMES tf, TradeSignalInfo &outSignal)
+   {
+      string prevSym = m_symbol;
+      ENUM_TIMEFRAMES prevTf = m_timeframe;
+      m_symbol = symbol;
+      m_timeframe = tf;
+      bool res = GetActivePositionSignal(outSignal);
+      m_symbol = prevSym;
+      m_timeframe = prevTf;
+      return res;
+   }
+
    //--- Check for active pending orders (BUY LIMIT, SELL LIMIT, etc.)
    bool GetPendingOrderSignal(TradeSignalInfo &outSignal)
    {
@@ -173,6 +185,18 @@ public:
          }
       }
       return false;
+   }
+
+   bool GetPendingOrderSignal(const string symbol, const ENUM_TIMEFRAMES tf, TradeSignalInfo &outSignal)
+   {
+      string prevSym = m_symbol;
+      ENUM_TIMEFRAMES prevTf = m_timeframe;
+      m_symbol = symbol;
+      m_timeframe = tf;
+      bool res = GetPendingOrderSignal(outSignal);
+      m_symbol = prevSym;
+      m_timeframe = prevTf;
+      return res;
    }
 
    //--- Inspect Trade Transaction event (Auto-Snapping on Open, TP, SL, Partials & Manual Close)
