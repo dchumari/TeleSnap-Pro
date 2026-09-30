@@ -37,6 +37,7 @@ input group "=== 📸 Capture & Image Settings ==="
 input ENUM_IMAGE_RESOLUTION  InpResolution     = RES_HD_1280x720;         // Image Resolution Preset
 input ENUM_CAPTION_STYLE     InpCaptionStyle   = STYLE_INSTITUTIONAL;     // Signal Caption Layout Style
 input ENUM_CAPTURE_TRIGGER   InpTriggerMode    = TRIGGER_AUTO_ALL_EVENTS; // Capture Trigger Mode
+input ulong                  InpMagicFilter    = 0;                       // Filter by EA Magic Number (0 = All Trades & EAs)
 input int                    InpHotkeyKey      = 123;                     // Keyboard Hotkey (123 = F12)
 
 input group "=== 🖥️ Floating HUD Settings ==="
@@ -117,7 +118,7 @@ int OnInit()
    }
 
    // 6. Initialize Trade Monitor
-   g_monitor.Init(_Symbol, (ENUM_TIMEFRAMES)_Period);
+   g_monitor.Init(_Symbol, (ENUM_TIMEFRAMES)_Period, InpMagicFilter);
 
    // 7. Preflight Connection Diagnostic Test
    string botUsername = "", chatTitle = "", errorDetails = "";

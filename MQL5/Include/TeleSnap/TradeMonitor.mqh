@@ -17,6 +17,7 @@ class CTradeMonitor
 private:
    string            m_symbol;
    ENUM_TIMEFRAMES   m_timeframe;
+   ulong             m_magicFilter;
 
    //--- Calculate pip size for symbol
    double GetPipSize(const string symbol)
@@ -29,19 +30,23 @@ private:
    }
 
 public:
-   CTradeMonitor() {}
+   CTradeMonitor() : m_magicFilter(0) {}
    ~CTradeMonitor() {}
 
-   void Init(const string symbol, const ENUM_TIMEFRAMES timeframe)
+   void Init(const string symbol, const ENUM_TIMEFRAMES timeframe, const ulong magicFilter = 0)
    {
       m_symbol = symbol;
       m_timeframe = timeframe;
+      m_magicFilter = magicFilter;
    }
 
    //--- Build complete trade analytics from active open position on chart
    bool GetActivePositionSignal(TradeSignalInfo &outSignal)
    {
       if(!PositionSelect(m_symbol))
+         return false;
+
+      if(m_magicFilter > 0 && (ulong)PositionGetInteger(POSITION_MAGIC) != m_magicFilter)
          return false;
 
       double pipSize = GetPipSize(m_symbol);
@@ -109,6 +114,9 @@ public:
          ulong orderTicket = OrderGetTicket(i);
          if(orderTicket > 0)
          {
+            if(m_magicFilter > 0 && (ulong)OrderGetInteger(ORDER_MAGIC) != m_magicFilter)
+               continue;
+
             string ordSymbol = OrderGetString(ORDER_SYMBOL);
             if(StringCompare(ordSymbol, m_symbol, false) == 0)
             {
@@ -180,6 +188,9 @@ public:
          ulong ordTicket = trans.order;
          if(ordTicket > 0 && HistoryOrderSelect(ordTicket))
          {
+            if(m_magicFilter > 0 && (ulong)HistoryOrderGetInteger(ordTicket, ORDER_MAGIC) != m_magicFilter)
+               return false;
+
             string ordSymbol = HistoryOrderGetString(ordTicket, ORDER_SYMBOL);
             if(StringCompare(ordSymbol, m_symbol, false) == 0)
             {
@@ -225,6 +236,9 @@ public:
 
       ulong dealTicket = trans.deal;
       if(!HistoryDealSelect(dealTicket))
+         return false;
+
+      if(m_magicFilter > 0 && (ulong)HistoryDealGetInteger(dealTicket, DEAL_MAGIC) != m_magicFilter)
          return false;
 
       string dealSymbol = HistoryDealGetString(dealTicket, DEAL_SYMBOL);
