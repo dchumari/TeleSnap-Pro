@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "Copyright 2026, Derrick Chumari."
 #property link        "https://github.com/dchumari/TeleSnap-Pro"
-#property version     "1.20"
+#property version     "1.21"
 #property description "⚡ TeleSnap Lite: Free Chart Snapper for Telegram"
 #property description "Free Edition with viral watermarking. Snap and send charts to Telegram with one click."
 #property strict
@@ -67,7 +67,7 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote = "");
 int OnInit()
 {
    Print("=================================================");
-   Print("⚡ Initializing TeleSnap Lite v1.20 (Free MQL5 Edition)");
+   Print("⚡ Initializing TeleSnap Lite v1.21 (Free MQL5 Edition)");
    Print("=================================================");
 
    // 1. Strictly enforce LITE MODE (Watermark is locked)
@@ -164,15 +164,24 @@ void OnChartEvent(const int id,
 {
    int trigger = g_ui.CheckTrigger(id, lparam, dparam, sparam);
 
-   if(trigger == 1)
+   if(trigger == 1) // Quick Snap [F12]
    {
       string userNote = g_ui.GetUserNote();
       ExecuteSnapAndSend("MANUAL_SNAP", userNote);
    }
-   else if(trigger == 2)
+   else if(trigger == 2) // Send With Note
    {
       string userNote = g_ui.GetUserNote();
+      if(StringLen(userNote) == 0)
+      {
+         // Highlight the text section and DO NOT send
+         g_ui.HighlightNoteRequired();
+         Print("[TeleSnap Lite] ⚠️ 'SEND + NOTE' clicked without a note. Highlighted note box.");
+         return;
+      }
+
       ExecuteSnapAndSend("MANUAL_NOTE_SNAP", userNote);
+      g_ui.ResetNoteBox(true); // Clear note box for next signal
    }
 }
 

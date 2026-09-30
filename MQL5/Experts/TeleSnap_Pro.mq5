@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "Copyright 2026, Derrick Chumari."
 #property link        "https://github.com/dchumari/TeleSnap-Pro"
-#property version     "1.20"
+#property version     "1.21"
 #property description "⚡ TeleSnap Pro: Ultra-Fast Chart Snapper & Telegram Signal Dispatcher"
 #property description "Snap high-resolution watermarked charts and send formatted signals to Telegram in under 300ms."
 #property strict
@@ -71,7 +71,7 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote = "");
 int OnInit()
 {
    Print("=================================================");
-   Print("⚡ Initializing TeleSnap Pro v1.20");
+   Print("⚡ Initializing TeleSnap Pro v1.21");
    Print("=================================================");
 
    // 1. Pro edition: Custom watermarking enabled
@@ -174,15 +174,24 @@ void OnChartEvent(const int id,
 {
    int trigger = g_ui.CheckTrigger(id, lparam, dparam, sparam);
 
-   if(trigger == 1) // Quick Snap [F12]
+   if(trigger == 1) // Quick Snap [F12] (Sends whether note exists or not)
    {
       string userNote = g_ui.GetUserNote();
       ExecuteSnapAndSend("MANUAL_SNAP", userNote);
    }
-   else if(trigger == 2) // Send With Note
+   else if(trigger == 2) // Send With Note (MUST have a note, otherwise highlights box)
    {
       string userNote = g_ui.GetUserNote();
+      if(StringLen(userNote) == 0)
+      {
+         // Highlight the text section and DO NOT send
+         g_ui.HighlightNoteRequired();
+         Print("[TeleSnap Pro] ⚠️ 'SEND + NOTE' clicked without a note. Highlighted note box.");
+         return;
+      }
+
       ExecuteSnapAndSend("MANUAL_NOTE_SNAP", userNote);
+      g_ui.ResetNoteBox(true); // Clear note box for next signal
    }
 }
 
@@ -247,10 +256,8 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote, const
    }
    else
    {
-      // Check if an active open position exists on this chart
       if(!g_monitor.GetActivePositionSignal(signal))
       {
-         // No open position: Build market setup / watchlist card
          signal.symbol = _Symbol;
          signal.timeframe = (ENUM_TIMEFRAMES)_Period;
          signal.status = "WATCHLIST";
@@ -286,7 +293,7 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote, const
    uchar photoBytes[];
    bool captured = g_capture.CaptureChartToBuffer(0, InpResolution, photoBytes);
 
-   // Clean up temporary watermark
+   // Clean up temporary watermark immediately
    g_watermark.RemoveOnChartWatermark(0);
 
    if(!captured)

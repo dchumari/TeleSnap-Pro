@@ -17,24 +17,24 @@ class CTeleSnapUI
 private:
    string            m_btnSnap;
    string            m_btnNoteSnap;
+   string            m_lblPrompt;
    string            m_editNote;
    string            m_statusLabel;
    int               m_xPos;
    int               m_yPos;
    int               m_hotkey;
    long              m_chartId;
-   string            m_notePlaceholder;
 
 public:
    CTeleSnapUI() : m_btnSnap("TeleSnap_Btn_Snap"),
                    m_btnNoteSnap("TeleSnap_Btn_NoteSnap"),
+                   m_lblPrompt("TeleSnap_Lbl_Prompt"),
                    m_editNote("TeleSnap_Edit_Note"),
                    m_statusLabel("TeleSnap_HUD_Status"),
                    m_xPos(25),
                    m_yPos(50),
                    m_hotkey(123),
-                   m_chartId(0),
-                   m_notePlaceholder("Type trade note / commentary here...")
+                   m_chartId(0)
    {}
 
    ~CTeleSnapUI()
@@ -92,28 +92,42 @@ public:
       ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_STATE, false);
       ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_HIDDEN, true);
 
-      // 3. On-Chart Editable Note Box (Direct Text Input)
+      // 3. Prompt Label above Note Box
+      ObjectCreate(m_chartId, m_lblPrompt, OBJ_LABEL, 0, 0, 0);
+      ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+      ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_XDISTANCE, m_xPos + 2);
+      ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_YDISTANCE, m_yPos + btnHeight + 4);
+      ObjectSetString(m_chartId, m_lblPrompt, OBJPROP_FONT, "Segoe UI");
+      ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_FONTSIZE, 8);
+      ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_COLOR, clrSilver);
+      ObjectSetString(m_chartId, m_lblPrompt, OBJPROP_TEXT, "📝 Custom Trade Note (click box below to type):");
+      ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_HIDDEN, true);
+
+      // 4. On-Chart Editable Note Box (Single Click Active Text Box)
       ObjectCreate(m_chartId, m_editNote, OBJ_EDIT, 0, 0, 0);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_CORNER, CORNER_LEFT_UPPER);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_XDISTANCE, m_xPos);
-      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_YDISTANCE, m_yPos + btnHeight + 4);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_YDISTANCE, m_yPos + btnHeight + 18);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_XSIZE, totalWidth);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_YSIZE, editHeight);
-      ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, m_notePlaceholder);
+      ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, "");
       ObjectSetString(m_chartId, m_editNote, OBJPROP_FONT, "Segoe UI");
-      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_FONTSIZE, 8);
-      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrDarkGray);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_FONTSIZE, 9);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_ALIGN, ALIGN_LEFT);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrWhite);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BGCOLOR, C'20,26,38');
-      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, C'45,60,85');
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, C'50,70,100');
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_READONLY, false);
-      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_SELECTABLE, true);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_SELECTABLE, false); // FALSE allows instant typing without selecting anchor boxes
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_SELECTED, false);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_HIDDEN, true);
 
-      // 4. Status Subtitle Label
+      // 5. Status Subtitle Label
       ObjectCreate(m_chartId, m_statusLabel, OBJ_LABEL, 0, 0, 0);
       ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_CORNER, CORNER_LEFT_UPPER);
       ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_XDISTANCE, m_xPos + 2);
-      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_YDISTANCE, m_yPos + btnHeight + editHeight + 8);
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_YDISTANCE, m_yPos + btnHeight + 18 + editHeight + 6);
       ObjectSetString(m_chartId, m_statusLabel, OBJPROP_FONT, "Segoe UI");
       ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_FONTSIZE, 8);
       ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_COLOR, clrSilver);
@@ -129,6 +143,7 @@ public:
    {
       ObjectDelete(m_chartId, m_btnSnap);
       ObjectDelete(m_chartId, m_btnNoteSnap);
+      ObjectDelete(m_chartId, m_lblPrompt);
       ObjectDelete(m_chartId, m_editNote);
       ObjectDelete(m_chartId, m_statusLabel);
       ChartRedraw(m_chartId);
@@ -140,15 +155,31 @@ public:
       string note = ObjectGetString(m_chartId, m_editNote, OBJPROP_TEXT);
       StringTrimLeft(note);
       StringTrimRight(note);
-      if(note == m_notePlaceholder)
+      if(StringFind(note, "⚠️") >= 0)
          return "";
       return note;
    }
 
-   void ResetUserNotePlaceholder()
+   //--- Highlight text section in red/gold when SEND + NOTE is clicked without a note
+   void HighlightNoteRequired()
    {
-      ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, m_notePlaceholder);
-      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrDarkGray);
+      ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, "⚠️ Please type your note here first!");
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrGold);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BGCOLOR, C'60,20,25'); // Alert dark red
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, clrOrangeRed);
+      SetStatusText("⚠️ Note required! Type in box above, or use [SNAP]", clrTomato);
+      ChartRedraw(m_chartId);
+   }
+
+   //--- Reset note box after successful send or when user clicks into it
+   void ResetNoteBox(const bool clearText = true)
+   {
+      if(clearText)
+         ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, "");
+
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrWhite);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BGCOLOR, C'20,26,38');
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, C'50,70,100');
       ChartRedraw(m_chartId);
    }
 
@@ -163,7 +194,7 @@ public:
    {
       ObjectSetString(m_chartId, m_btnSnap, OBJPROP_TEXT, "⏳ DISPATCHING");
       ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_BGCOLOR, clrDarkOrange);
-      SetStatusText("Uploading to Telegram...", clrGold);
+      SetStatusText("Uploading snapshot to Telegram...", clrGold);
       ChartRedraw(m_chartId);
    }
 
@@ -201,34 +232,54 @@ public:
    //--- Event Inspector
    int CheckTrigger(const int id, const long &lparam, const double &dparam, const string &sparam)
    {
-      // Check if user clicked into edit box to type (clear placeholder)
+      // 1. User clicked into the Edit box
       if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_editNote)
       {
          string cur = ObjectGetString(m_chartId, m_editNote, OBJPROP_TEXT);
-         if(cur == m_notePlaceholder)
+         if(StringFind(cur, "⚠️") >= 0)
          {
-            ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, "");
-            ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrWhite);
+            ResetNoteBox(true);
+         }
+         else
+         {
+            ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, clrDodgerBlue);
             ChartRedraw(m_chartId);
          }
-         return 0; // Just editing, don't snap
+         return 0;
       }
 
-      // 1. Quick Snap button
+      // 2. User finished editing text in Edit box
+      if(id == CHARTEVENT_OBJECT_ENDEDIT && sparam == m_editNote)
+      {
+         string typed = GetUserNote();
+         if(StringLen(typed) > 0)
+         {
+            ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, clrMediumSeaGreen);
+            SetStatusText("● Note ready: \"" + typed + "\"", clrMediumSeaGreen);
+         }
+         else
+         {
+            ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, C'50,70,100');
+         }
+         ChartRedraw(m_chartId);
+         return 0;
+      }
+
+      // 3. Quick Snap button [F12]
       if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_btnSnap)
       {
          ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_STATE, false);
-         return 1; // Snap without forcing note
+         return 1;
       }
 
-      // 2. Send With Note button
+      // 4. Send With Note button
       if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_btnNoteSnap)
       {
          ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_STATE, false);
-         return 2; // Snap WITH note
+         return 2;
       }
 
-      // 3. Hotkey F12
+      // 5. Hotkey F12
       if(id == CHARTEVENT_KEYDOWN && lparam == m_hotkey)
       {
          return 1;
