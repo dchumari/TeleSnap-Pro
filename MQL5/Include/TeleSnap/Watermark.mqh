@@ -129,10 +129,20 @@ public:
       ChartRedraw(chartId);
    }
 
+   string FormatTimeframe(const ENUM_TIMEFRAMES tf)
+   {
+      string s = EnumToString(tf);
+      if(StringFind(s, "PERIOD_") == 0)
+         return StringSubstr(s, 7);
+      if(StringLen(s) == 0 || s == "0" || s == "PERIOD_CURRENT")
+         return "M1";
+      return s;
+   }
+
    //--- Build rich, ultra-informative HTML signal post
    string BuildSignalCaption(const TradeSignalInfo &info, const ENUM_CAPTION_STYLE style)
    {
-      string tfStr = StringSubstr(EnumToString(info.timeframe), 11);
+      string tfStr = FormatTimeframe(info.timeframe);
       int digits = (int)SymbolInfoInteger(info.symbol, SYMBOL_DIGITS);
       double pipSize = GetPipSize(info.symbol);
       string ccy = (StringLen(info.currency) > 0) ? info.currency : "USD";
@@ -202,7 +212,18 @@ public:
       {
          caption += "⚖️ <b>CLOSED AT BREAKEVEN: " + info.symbol + " (" + tfStr + ")</b>\n";
          caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-         caption += "📍 <b>Status:</b> ⚖️ Breakeven Exit ($0.00 Risk)\n";
+         caption += "📍 <b>Status:</b> ⚖️ Breakeven Exit\n";
+         if(info.floatingPnL != 0)
+         {
+            string pnlSign = (info.floatingPnL >= 0) ? "+$" : "-$";
+            caption += "💸 <b>Net Realized:</b> " + pnlSign + DoubleToString(MathAbs(info.floatingPnL), 2) + " " + ccy;
+            if(info.floatingPips != 0)
+            {
+               string pipSign = (info.floatingPips >= 0) ? "+" : "";
+               caption += " (" + pipSign + DoubleToString(info.floatingPips, 1) + " pips)";
+            }
+            caption += "\n";
+         }
          caption += "🏁 <b>Exit Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
          if(info.entryPrice > 0) caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
       }

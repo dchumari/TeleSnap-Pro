@@ -18,6 +18,7 @@ private:
    string            m_symbol;
    ENUM_TIMEFRAMES   m_timeframe;
    ulong             m_magicFilter;
+   bool              m_allSymbols;
 
    //--- Calculate pip size for symbol
    double GetPipSize(const string symbol)
@@ -30,14 +31,15 @@ private:
    }
 
 public:
-   CTradeMonitor() : m_magicFilter(0) {}
+   CTradeMonitor() : m_magicFilter(0), m_allSymbols(false) {}
    ~CTradeMonitor() {}
 
-   void Init(const string symbol, const ENUM_TIMEFRAMES timeframe, const ulong magicFilter = 0)
+   void Init(const string symbol, const ENUM_TIMEFRAMES timeframe, const ulong magicFilter = 0, const bool allSymbols = false)
    {
       m_symbol = symbol;
       m_timeframe = timeframe;
       m_magicFilter = magicFilter;
+      m_allSymbols = allSymbols;
    }
 
    //--- Build complete trade analytics from active open position on chart
@@ -199,62 +201,149 @@ public:
       return res;
    }
 
-   //--- Inspect Trade Transaction event (Auto-Snapping on Open, TP, SL, Partials & Manual Close)
+   //--- Inspect Trade Transaction event (Auto-Snapping on Open, Pending Orders, TP, SL, Partials & Manual Close)
    bool ProcessTransaction(const MqlTradeTransaction &trans,
                            const MqlTradeRequest &request,
                            const MqlTradeResult &result,
                            TradeSignalInfo &outSignal,
                            string &outEventReason)
    {
-      // 0. Check for Pending Order Cancellation / Expiry
-      if(trans.type == TRADE_TRANSACTION_ORDER_DELETE)
+      // 1. Pending Order Placed
+      if(trans.type == TRADE_TRANSACTION_ORDER_ADD)
       {
-         ulong ordTicket = trans.order;
-         if(ordTicket > 0 && HistoryOrderSelect(ordTicket))
+         if(trans.order_type >= ORDER_TYPE_BUY_LIMIT && trans.order_type <= ORDER_TYPE_SELL_STOP_LIMIT)
          {
-            if(m_magicFilter > 0 && (ulong)HistoryOrderGetInteger(ordTicket, ORDER_MAGIC) != m_magicFilter)
+            ulong ordTicket = trans.order;
+            string ordSymbol = trans.symbol;
+            double ordPrice = trans.price;
+            double ordVol = trans.volume;
+            double ordSl = trans.price_sl;
+            double ordTp = trans.price_tp;
+
+            if(ordTicket > 0 && OrderSelect(ordTicket))
+            {
+               if(m_magicFilter > 0 && (ulong)OrderGetInteger(ORDER_MAGIC) != m_magicFilter)
+                  return false;
+
+               ordSymbol = OrderGetString(ORDER_SYMBOL);
+               ordPrice = OrderGetDouble(ORDER_PRICE_OPEN);
+               ordVol = OrderGetDouble(ORDER_VOLUME_INITIAL);
+               ordSl = OrderGetDouble(ORDER_SL);
+               ordTp = OrderGetDouble(ORDER_TP);
+            }
+
+            if(StringLen(ordSymbol) == 0) ordSymbol = m_symbol;
+            if(!m_allSymbols && StringCompare(ordSymbol, m_symbol, false) != 0)
                return false;
 
-            string ordSymbol = HistoryOrderGetString(ordTicket, ORDER_SYMBOL);
-            if(StringCompare(ordSymbol, m_symbol, false) == 0)
+            string typeStr = (trans.order_type == ORDER_TYPE_BUY_LIMIT)  ? "BUY LIMIT"  :
+                             (trans.order_type == ORDER_TYPE_SELL_LIMIT) ? "SELL LIMIT" :
+                             (trans.order_type == ORDER_TYPE_BUY_STOP)   ? "BUY STOP"   :
+                             (trans.order_type == ORDER_TYPE_SELL_STOP)  ? "SELL STOP"  : "PENDING ORDER";
+
+            bool isBuy = (trans.order_type == ORDER_TYPE_BUY_LIMIT || trans.order_type == ORDER_TYPE_BUY_STOP);
+            double pipSize = GetPipSize(ordSymbol);
+
+            outSignal.symbol = ordSymbol;
+            outSignal.timeframe = m_timeframe;
+            outSignal.status = "PENDING_SETUP";
+            outSignal.orderType = typeStr;
+            outSignal.ticket = ordTicket;
+            outSignal.volume = ordVol;
+            outSignal.entryPrice = ordPrice;
+            outSignal.currentPrice = SymbolInfoDouble(ordSymbol, isBuy ? SYMBOL_ASK : SYMBOL_BID);
+            outSignal.stopLoss = ordSl;
+            outSignal.takeProfit = ordTp;
+            outSignal.floatingPnL = 0;
+            outSignal.floatingPips = 0;
+            outSignal.currency = AccountInfoString(ACCOUNT_CURRENCY);
+            outSignal.signalTime = TimeCurrent();
+
+            if(pipSize > 0)
             {
-               ENUM_ORDER_TYPE oType = (ENUM_ORDER_TYPE)HistoryOrderGetInteger(ordTicket, ORDER_TYPE);
-               ENUM_ORDER_STATE oState = (ENUM_ORDER_STATE)HistoryOrderGetInteger(ordTicket, ORDER_STATE);
-
-               if(oType >= ORDER_TYPE_BUY_LIMIT && oType <= ORDER_TYPE_SELL_STOP_LIMIT && 
-                 (oState == ORDER_STATE_CANCELED || oState == ORDER_STATE_EXPIRED))
-               {
-                  string typeStr = (oType == ORDER_TYPE_BUY_LIMIT)  ? "BUY LIMIT"  :
-                                   (oType == ORDER_TYPE_SELL_LIMIT) ? "SELL LIMIT" :
-                                   (oType == ORDER_TYPE_BUY_STOP)   ? "BUY STOP"   :
-                                   (oType == ORDER_TYPE_SELL_STOP)  ? "SELL STOP"  : "PENDING ORDER";
-
-                  outSignal.symbol = m_symbol;
-                  outSignal.timeframe = m_timeframe;
-                  outSignal.status = "ORDER_CANCELED";
-                  outSignal.orderType = (oState == ORDER_STATE_EXPIRED) ? (typeStr + " (EXPIRED)") : (typeStr + " (CANCELED)");
-                  outSignal.ticket = ordTicket;
-                  outSignal.volume = HistoryOrderGetDouble(ordTicket, ORDER_VOLUME_INITIAL);
-                  outSignal.entryPrice = HistoryOrderGetDouble(ordTicket, ORDER_PRICE_OPEN);
-                  outSignal.currentPrice = SymbolInfoDouble(m_symbol, SYMBOL_BID);
-                  outSignal.stopLoss = HistoryOrderGetDouble(ordTicket, ORDER_SL);
-                  outSignal.takeProfit = HistoryOrderGetDouble(ordTicket, ORDER_TP);
-                  outSignal.floatingPnL = 0;
-                  outSignal.floatingPips = 0;
-                  outSignal.currency = AccountInfoString(ACCOUNT_CURRENCY);
-                  outSignal.signalTime = TimeCurrent();
-                  outSignal.customComment = (oState == ORDER_STATE_EXPIRED) ? 
-                                            "⌛ Pending setup expired without triggering." : 
-                                            "❌ Setup invalidated: Trader canceled pending order.";
-
-                  outEventReason = "ORDER_CANCELED";
-                  return true;
-               }
+               if(outSignal.stopLoss > 0)
+                  outSignal.slPips = MathAbs(outSignal.entryPrice - outSignal.stopLoss) / pipSize;
+               if(outSignal.takeProfit > 0)
+                  outSignal.tpPips = MathAbs(outSignal.takeProfit - outSignal.entryPrice) / pipSize;
+               if(outSignal.slPips > 0 && outSignal.tpPips > 0)
+                  outSignal.riskRewardRatio = outSignal.tpPips / outSignal.slPips;
             }
+
+            double point = SymbolInfoDouble(ordSymbol, SYMBOL_POINT);
+            long spreadPoints = SymbolInfoInteger(ordSymbol, SYMBOL_SPREAD);
+            outSignal.spreadPips = (pipSize > 0) ? (spreadPoints * point) / pipSize : 0;
+            outSignal.customComment = "⏳ New Pending Order Placed";
+            outEventReason = "ORDER_PLACED";
+            return true;
+         }
+      }
+
+      // 2. Pending Order Canceled or Expired
+      if(trans.type == TRADE_TRANSACTION_ORDER_DELETE)
+      {
+         if(trans.order_type >= ORDER_TYPE_BUY_LIMIT && trans.order_type <= ORDER_TYPE_SELL_STOP_LIMIT)
+         {
+            // If filled, the DEAL_ADD transaction handles the actual position open!
+            if(trans.order_state == ORDER_STATE_FILLED || trans.order_state == ORDER_STATE_PARTIAL)
+               return false;
+
+            ulong ordTicket = trans.order;
+            string ordSymbol = trans.symbol;
+            double ordPrice = trans.price;
+            double ordVol = trans.volume;
+            double ordSl = trans.price_sl;
+            double ordTp = trans.price_tp;
+
+            HistorySelect(TimeCurrent() - 86400, TimeCurrent() + 60);
+            if(ordTicket > 0 && HistoryOrderSelect(ordTicket))
+            {
+               if(m_magicFilter > 0 && (ulong)HistoryOrderGetInteger(ordTicket, ORDER_MAGIC) != m_magicFilter)
+                  return false;
+
+               ordSymbol = HistoryOrderGetString(ordTicket, ORDER_SYMBOL);
+               ordPrice = HistoryOrderGetDouble(ordTicket, ORDER_PRICE_OPEN);
+               ordVol = HistoryOrderGetDouble(ordTicket, ORDER_VOLUME_INITIAL);
+               ordSl = HistoryOrderGetDouble(ordTicket, ORDER_SL);
+               ordTp = HistoryOrderGetDouble(ordTicket, ORDER_TP);
+               ENUM_ORDER_STATE hState = (ENUM_ORDER_STATE)HistoryOrderGetInteger(ordTicket, ORDER_STATE);
+               if(hState == ORDER_STATE_FILLED)
+                  return false;
+            }
+
+            if(StringLen(ordSymbol) == 0) ordSymbol = m_symbol;
+            if(!m_allSymbols && StringCompare(ordSymbol, m_symbol, false) != 0)
+               return false;
+
+            bool isExpired = (trans.order_state == ORDER_STATE_EXPIRED);
+            string typeStr = (trans.order_type == ORDER_TYPE_BUY_LIMIT)  ? "BUY LIMIT"  :
+                             (trans.order_type == ORDER_TYPE_SELL_LIMIT) ? "SELL LIMIT" :
+                             (trans.order_type == ORDER_TYPE_BUY_STOP)   ? "BUY STOP"   :
+                             (trans.order_type == ORDER_TYPE_SELL_STOP)  ? "SELL STOP"  : "PENDING ORDER";
+
+            outSignal.symbol = ordSymbol;
+            outSignal.timeframe = m_timeframe;
+            outSignal.status = "ORDER_CANCELED";
+            outSignal.orderType = isExpired ? (typeStr + " (EXPIRED)") : (typeStr + " (CANCELED)");
+            outSignal.ticket = ordTicket;
+            outSignal.volume = ordVol;
+            outSignal.entryPrice = ordPrice;
+            outSignal.currentPrice = SymbolInfoDouble(ordSymbol, SYMBOL_BID);
+            outSignal.stopLoss = ordSl;
+            outSignal.takeProfit = ordTp;
+            outSignal.floatingPnL = 0;
+            outSignal.floatingPips = 0;
+            outSignal.currency = AccountInfoString(ACCOUNT_CURRENCY);
+            outSignal.signalTime = TimeCurrent();
+            outSignal.customComment = isExpired ? "⌛ Pending setup expired without triggering." : 
+                                                  "❌ Setup invalidated: Trader canceled pending order.";
+
+            outEventReason = isExpired ? "ORDER_EXPIRED" : "ORDER_CANCELED";
+            return true;
          }
          return false;
       }
 
+      // 3. Trade Deal Added (Position Open, Close, Partial, TP, SL, Breakeven, Manual Close)
       if(trans.type != TRADE_TRANSACTION_DEAL_ADD)
          return false;
 
@@ -266,8 +355,7 @@ public:
          return false;
 
       string dealSymbol = HistoryDealGetString(dealTicket, DEAL_SYMBOL);
-      // Case-insensitive comparison so xauusd matches XAUUSD cleanly
-      if(StringCompare(dealSymbol, m_symbol, false) != 0)
+      if(!m_allSymbols && StringCompare(dealSymbol, m_symbol, false) != 0)
          return false;
 
       ENUM_DEAL_ENTRY dealEntry = (ENUM_DEAL_ENTRY)HistoryDealGetInteger(dealTicket, DEAL_ENTRY);
@@ -276,19 +364,19 @@ public:
       if(dealType != DEAL_TYPE_BUY && dealType != DEAL_TYPE_SELL)
          return false;
 
-      double pipSize = GetPipSize(m_symbol);
-      outSignal.symbol = m_symbol;
+      double pipSize = GetPipSize(dealSymbol);
+      outSignal.symbol = dealSymbol;
       outSignal.timeframe = m_timeframe;
       outSignal.ticket = dealTicket;
       outSignal.currency = AccountInfoString(ACCOUNT_CURRENCY);
       outSignal.signalTime = (datetime)HistoryDealGetInteger(dealTicket, DEAL_TIME);
 
       // Spread
-      double point = SymbolInfoDouble(m_symbol, SYMBOL_POINT);
-      long spreadPoints = SymbolInfoInteger(m_symbol, SYMBOL_SPREAD);
+      double point = SymbolInfoDouble(dealSymbol, SYMBOL_POINT);
+      long spreadPoints = SymbolInfoInteger(dealSymbol, SYMBOL_SPREAD);
       outSignal.spreadPips = (pipSize > 0) ? (spreadPoints * point) / pipSize : 0;
 
-      // 1. New Position Opened
+      // 3A. New Position Opened
       if(dealEntry == DEAL_ENTRY_IN)
       {
          bool isBuy = (dealType == DEAL_TYPE_BUY);
@@ -333,7 +421,7 @@ public:
          return true;
       }
 
-      // 2. Position Closed (Check Partial vs Full, and TP/SL/Manual Reason)
+      // 3B. Position Closed (Check Partial vs Full, and TP/SL/Manual/Breakeven)
       if(dealEntry == DEAL_ENTRY_OUT || dealEntry == DEAL_ENTRY_OUT_BY || dealEntry == DEAL_ENTRY_INOUT)
       {
          ulong posId = HistoryDealGetInteger(dealTicket, DEAL_POSITION_ID);
@@ -386,7 +474,7 @@ public:
                }
             }
 
-            // Restore selection of the current deal
+            // Restore selection of current deal
             HistoryDealSelect(dealTicket);
          }
 
@@ -401,7 +489,7 @@ public:
          }
          outSignal.floatingPips = pipsDiff;
 
-         // A. PARTIAL CLOSE
+         // I. PARTIAL CLOSE
          if(isStillOpen && remainingVol > 0.0001)
          {
             outSignal.status = "PARTIAL_CLOSE";
@@ -414,7 +502,7 @@ public:
             return true;
          }
 
-         // B. FULL CLOSE: Check TP, SL, or Manual
+         // II. FULL CLOSE: Check TP, SL, or Manual
          bool isTp = (dealReason == DEAL_REASON_TP || 
                       StringFind(dealComment, "tp") >= 0 || 
                       StringFind(dealComment, "TP") >= 0 || 
@@ -450,8 +538,9 @@ public:
          }
          else
          {
-            // C. MANUAL CLOSE / EARLY CASHOUT
-            if(profit > 0.5)
+            // III. MANUAL CLOSE / EARLY CASHOUT
+            // Accurate classification for any lot size (0.01 micro-lots to 100.0 standard lots)
+            if(profit > 0.05 && pipsDiff > 0.5)
             {
                outSignal.orderType = posWasBuy ? "BUY (MANUAL CASHOUT)" : "SELL (MANUAL CASHOUT)";
                outSignal.status = "MANUAL_PROFIT";
@@ -460,7 +549,7 @@ public:
                outEventReason = "MANUAL_PROFIT";
                return true;
             }
-            else if(profit < -0.5)
+            else if(profit < -0.05 && pipsDiff < -0.5)
             {
                outSignal.orderType = posWasBuy ? "BUY (MANUAL CUT)" : "SELL (MANUAL CUT)";
                outSignal.status = "MANUAL_LOSS";
@@ -471,9 +560,11 @@ public:
             }
             else
             {
+               // Truly flat close (within +/- 0.5 pips of entry)
                outSignal.orderType = posWasBuy ? "BUY (BREAKEVEN)" : "SELL (BREAKEVEN)";
                outSignal.status = "BREAKEVEN";
-               outSignal.customComment = "⚖️ Position closed at breakeven ($0.00 Risk).";
+               string pnlStr = (profit >= 0) ? ("+$" + DoubleToString(profit, 2)) : ("-$" + DoubleToString(MathAbs(profit), 2));
+               outSignal.customComment = "⚖️ Position closed flat near breakeven (" + pnlStr + " " + outSignal.currency + ").";
                outEventReason = "BREAKEVEN";
                return true;
             }

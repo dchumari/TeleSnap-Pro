@@ -159,8 +159,8 @@ int OnInit()
       }
    }
 
-   // 7. Initialize Trade Monitor
-   g_monitor.Init(_Symbol, (ENUM_TIMEFRAMES)_Period, InpMagicFilter);
+   // 7. Initialize Trade Monitor (Multi-symbol in Command Center mode)
+   g_monitor.Init(_Symbol, (ENUM_TIMEFRAMES)_Period, InpMagicFilter, InpEnableCommandCenter);
 
    if(connected)
    {
@@ -257,7 +257,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
 
    if(g_monitor.ProcessTransaction(trans, request, result, signal, eventReason))
    {
-      if(InpTriggerMode == TRIGGER_AUTO_ON_ENTRY && eventReason != "TRADE_OPEN")
+      if(InpTriggerMode == TRIGGER_AUTO_ON_ENTRY && (eventReason != "TRADE_OPEN" && eventReason != "ORDER_PLACED"))
          return;
 
       // Smart Cross-Chart Targeting: Find the linked chart for this symbol (e.g. Algo Chart with boxes!)
@@ -269,6 +269,10 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
 
       if(targetChartId == 0)
          targetChartId = ChartID();
+
+      // Ensure signal timeframe matches the actual targeted chart
+      if(targetChartId > 0 && targetChartId != ChartID())
+         signal.timeframe = ChartPeriod(targetChartId);
 
       ExecuteSnapAndSend(targetChartId, eventReason, "", signal);
    }
