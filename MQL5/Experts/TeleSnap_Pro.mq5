@@ -139,8 +139,7 @@ int OnInit()
    {
       string connTarget = (StringLen(chatTitle) > 0) ? chatTitle : g_telegram.GetChatId();
       g_hub.Init(ChartID(), botUsername, connTarget, connected);
-      ChartSaveTemplate(0, "TeleSnap_Hub.tpl");
-      Print("[TeleSnap Pro] ⚡ Command Center & Multi-Chart Hub Activated! Saved TeleSnap_Hub.tpl template.");
+      Print("[TeleSnap Pro] ⚡ Command Center & Multi-Chart Hub Activated!");
    }
    else
    {
