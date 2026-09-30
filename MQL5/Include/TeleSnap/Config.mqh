@@ -12,7 +12,7 @@ enum ENUM_CAPTURE_TRIGGER
 {
    TRIGGER_BUTTON_ONLY,     // Manual HUD Buttons & Hotkey (F12) Only
    TRIGGER_AUTO_ON_ENTRY,   // Auto-Snap on Trade Open + Manual Buttons
-   TRIGGER_AUTO_ALL_EVENTS  // Auto-Snap on Open, SL, and TP + Manual Buttons
+   TRIGGER_AUTO_ALL_EVENTS  // Auto-Snap on Open, TP, SL, Partials & Manual Closes
 };
 
 //--- Image resolution presets
@@ -41,13 +41,13 @@ enum ENUM_CAPTION_STYLE
    STYLE_INSTITUTIONAL      // Institutional: In-Trade stats, multi-TP targets, spread, floating PnL & Note
 };
 
-//--- Trade snapshot data structure (Extended with rich in-trade metrics)
+//--- Trade snapshot data structure (Extended with partials and close reasons)
 struct TradeSignalInfo
 {
    string            symbol;
    ENUM_TIMEFRAMES   timeframe;
-   string            status;          // "IN_TRADE", "NEW_SETUP", "TAKE_PROFIT", "STOP_LOSS", "WATCHLIST"
-   string            orderType;       // BUY, SELL, BUY LIMIT, etc.
+   string            status;          // "IN_TRADE", "NEW_SETUP", "TAKE_PROFIT", "STOP_LOSS", "PARTIAL_CLOSE", "MANUAL_PROFIT", "MANUAL_LOSS", "BREAKEVEN", "PENDING_SETUP", "WATCHLIST"
+   string            orderType;       // BUY, SELL, BUY LIMIT, SELL LIMIT, etc.
    double            entryPrice;
    double            currentPrice;
    double            stopLoss;
@@ -55,12 +55,15 @@ struct TradeSignalInfo
    double            tp1Price;        // 1:1 R:R target
    double            tp2Price;        // 1:2 R:R target
    double            volume;          // Lot size (e.g. 0.24)
-   double            floatingPnL;     // Current profit in $
-   double            floatingPips;    // Current profit in pips
+   double            closedVolume;    // Volume closed on partial/full
+   double            remainingVolume; // Volume still open on partial
+   double            floatingPnL;     // Profit or realized PnL in account currency
+   double            floatingPips;    // Current profit or outcome in pips
    double            slPips;
    double            tpPips;
    double            riskRewardRatio;
    double            spreadPips;
+   string            currency;        // USD, EUR, GBP, KES, etc.
    datetime          signalTime;
    ulong             ticket;
    string            customComment;   // Custom message from on-chart edit box

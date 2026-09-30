@@ -36,7 +36,7 @@ input ENUM_WATERMARK_POSITION InpWatermarkPos  = POS_BOTTOM_RIGHT;        // On-
 input group "=== 📸 Capture & Image Settings ==="
 input ENUM_IMAGE_RESOLUTION  InpResolution     = RES_HD_1280x720;         // Image Resolution Preset
 input ENUM_CAPTION_STYLE     InpCaptionStyle   = STYLE_INSTITUTIONAL;     // Signal Caption Layout Style
-input ENUM_CAPTURE_TRIGGER   InpTriggerMode    = TRIGGER_BUTTON_ONLY;     // Capture Trigger Mode
+input ENUM_CAPTURE_TRIGGER   InpTriggerMode    = TRIGGER_AUTO_ALL_EVENTS; // Capture Trigger Mode
 input int                    InpHotkeyKey      = 123;                     // Keyboard Hotkey (123 = F12)
 
 input group "=== 🖥️ Floating HUD Settings ==="
@@ -191,6 +191,28 @@ void OnChartEvent(const int id,
 }
 
 //+------------------------------------------------------------------+
+//| Trade Transaction Event handler (Auto-Snapping)                  |
+//+------------------------------------------------------------------+
+void OnTradeTransaction(const MqlTradeTransaction &trans,
+                        const MqlTradeRequest &request,
+                        const MqlTradeResult &result)
+{
+   if(InpTriggerMode == TRIGGER_BUTTON_ONLY)
+      return;
+
+   TradeSignalInfo signal;
+   string eventReason = "";
+
+   if(g_monitor.ProcessTransaction(trans, request, result, signal, eventReason))
+   {
+      if(InpTriggerMode == TRIGGER_AUTO_ON_ENTRY && eventReason != "TRADE_OPEN")
+         return;
+
+      ExecuteSnapAndSend(eventReason, "", signal);
+   }
+}
+
+//+------------------------------------------------------------------+
 //| Timer function for resetting HUD state                           |
 //+------------------------------------------------------------------+
 void OnTimer()
@@ -230,25 +252,28 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote, const
    {
       if(!g_monitor.GetActivePositionSignal(signal))
       {
-         signal.symbol = _Symbol;
-         signal.timeframe = (ENUM_TIMEFRAMES)_Period;
-         signal.status = "WATCHLIST";
-         signal.orderType = "MARKET SETUP";
-         signal.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-         signal.currentPrice = signal.entryPrice;
-         signal.stopLoss = 0;
-         signal.takeProfit = 0;
-         signal.volume = 0;
-         signal.ticket = 0;
-         signal.floatingPnL = 0;
-         signal.floatingPips = 0;
-         signal.signalTime = TimeCurrent();
+         if(!g_monitor.GetPendingOrderSignal(signal))
+         {
+            signal.symbol = _Symbol;
+            signal.timeframe = (ENUM_TIMEFRAMES)_Period;
+            signal.status = "WATCHLIST";
+            signal.orderType = "MARKET SETUP";
+            signal.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+            signal.currentPrice = signal.entryPrice;
+            signal.stopLoss = 0;
+            signal.takeProfit = 0;
+            signal.volume = 0;
+            signal.ticket = 0;
+            signal.floatingPnL = 0;
+            signal.floatingPips = 0;
+            signal.signalTime = TimeCurrent();
 
-         double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-         int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-         double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
-         long spreadPts = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
-         signal.spreadPips = (pipSize > 0) ? (spreadPts * point) / pipSize : 0;
+            double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+            int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+            double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+            long spreadPts = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+            signal.spreadPips = (pipSize > 0) ? (spreadPts * point) / pipSize : 0;
+         }
       }
    }
 

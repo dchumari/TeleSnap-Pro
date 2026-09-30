@@ -265,25 +265,28 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote, const
    {
       if(!g_monitor.GetActivePositionSignal(signal))
       {
-         signal.symbol = _Symbol;
-         signal.timeframe = (ENUM_TIMEFRAMES)_Period;
-         signal.status = "WATCHLIST";
-         signal.orderType = "MARKET SETUP";
-         signal.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-         signal.currentPrice = signal.entryPrice;
-         signal.stopLoss = 0;
-         signal.takeProfit = 0;
-         signal.volume = 0;
-         signal.ticket = 0;
-         signal.floatingPnL = 0;
-         signal.floatingPips = 0;
-         signal.signalTime = TimeCurrent();
+         if(!g_monitor.GetPendingOrderSignal(signal))
+         {
+            signal.symbol = _Symbol;
+            signal.timeframe = (ENUM_TIMEFRAMES)_Period;
+            signal.status = "WATCHLIST";
+            signal.orderType = "MARKET SETUP";
+            signal.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+            signal.currentPrice = signal.entryPrice;
+            signal.stopLoss = 0;
+            signal.takeProfit = 0;
+            signal.volume = 0;
+            signal.ticket = 0;
+            signal.floatingPnL = 0;
+            signal.floatingPips = 0;
+            signal.signalTime = TimeCurrent();
 
-         double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-         int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
-         double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
-         long spreadPts = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
-         signal.spreadPips = (pipSize > 0) ? (spreadPts * point) / pipSize : 0;
+            double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+            int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+            double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+            long spreadPts = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+            signal.spreadPips = (pipSize > 0) ? (spreadPts * point) / pipSize : 0;
+         }
       }
    }
 

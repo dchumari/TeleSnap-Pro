@@ -72,13 +72,21 @@ public:
    CTelegramClient() : m_timeout(10000), m_botUsername("") {}
    ~CTelegramClient() {}
 
+   //--- Escape special HTML characters to prevent Telegram parse errors
+   static string EscapeHtml(string text)
+   {
+      StringReplace(text, "&", "&amp;");
+      StringReplace(text, "<", "&lt;");
+      StringReplace(text, ">", "&gt;");
+      return text;
+   }
+
    //--- Sanitize Chat ID (e.g. handle https://t.me/ or missing @)
    static string SanitizeChatId(string raw)
    {
       StringTrimLeft(raw);
       StringTrimRight(raw);
 
-      // Handle t.me links
       if(StringFind(raw, "https://t.me/") == 0)
          raw = "@" + StringSubstr(raw, 13);
       else if(StringFind(raw, "http://t.me/") == 0)
@@ -86,7 +94,6 @@ public:
       else if(StringFind(raw, "t.me/") == 0)
          raw = "@" + StringSubstr(raw, 5);
 
-      // If user typed 'mychannel' without @ and not numeric
       if(StringLen(raw) > 0)
       {
          ushort firstChar = StringGetCharacter(raw, 0);
@@ -115,6 +122,15 @@ public:
    //--- Diagnostic Test: Verify Bot Token & Chat ID
    bool TestConnection(string &outBotUsername, string &outChatTitle, string &outErrorDetails)
    {
+      // Bypass WebRequest in Strategy Tester for MQL5 Marketplace compliance
+      if(MQLInfoInteger(MQL_TESTER))
+      {
+         outBotUsername = "tester_bot";
+         outChatTitle = "Strategy Tester Channel";
+         outErrorDetails = "";
+         return true;
+      }
+
       if(StringLen(m_botToken) == 0)
       {
          outErrorDetails = "Bot Token is empty. Please enter your token from @BotFather.";
@@ -188,8 +204,15 @@ public:
    }
 
    //--- Send Photo using RFC 7578 Multipart/form-data
-   bool SendPhoto(const uchar &photoBytes[], const string caption, string &outErrorMessage)
+   bool SendPhoto(const uchar &photoBytes[], string caption, string &outErrorMessage)
    {
+      // Bypass in Strategy Tester for MQL5 Marketplace approval
+      if(MQLInfoInteger(MQL_TESTER))
+      {
+         outErrorMessage = "";
+         return true;
+      }
+
       if(StringLen(m_botToken) == 0 || StringLen(m_chatId) == 0)
       {
          outErrorMessage = "Bot Token or Chat ID not configured.";
@@ -200,6 +223,12 @@ public:
       {
          outErrorMessage = "Empty photo buffer.";
          return false;
+      }
+
+      // Guard against Telegram's strict 1024-character caption limit
+      if(StringLen(caption) > 1020)
+      {
+         caption = StringSubstr(caption, 0, 1015) + "...";
       }
 
       string boundary = "----TeleSnapBoundary" + IntegerToString(GetTickCount());

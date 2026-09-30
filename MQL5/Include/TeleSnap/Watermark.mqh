@@ -8,6 +8,7 @@
 #property strict
 
 #include "Config.mqh"
+#include "Telegram.mqh"
 
 //+------------------------------------------------------------------+
 //| Watermarking, Multi-Target Calculations & Rich Signal Generator  |
@@ -100,7 +101,7 @@ public:
          case POS_TOP_LEFT:
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_XDISTANCE, 30);
-            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_YDISTANCE, 120);
+            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_YDISTANCE, 135);
             break;
          case POS_TOP_RIGHT:
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
@@ -131,107 +132,191 @@ public:
    //--- Build rich, ultra-informative HTML signal post
    string BuildSignalCaption(const TradeSignalInfo &info, const ENUM_CAPTION_STYLE style)
    {
-      string directionEmoji = (StringFind(info.orderType, "BUY") >= 0) ? "🟢" : "🔴";
       string tfStr = StringSubstr(EnumToString(info.timeframe), 11);
       int digits = (int)SymbolInfoInteger(info.symbol, SYMBOL_DIGITS);
       double pipSize = GetPipSize(info.symbol);
+      string ccy = (StringLen(info.currency) > 0) ? info.currency : "USD";
 
       string caption = "";
 
-      // 1. Header Banner
-      caption += "📊 <b>" + info.symbol + " • " + tfStr + " ANALYSIS & SIGNAL</b>\n";
-      caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-
-      // 2. Status & Order Information
-      string statusText = "🟢 IN TRADE (RUNNING)";
-      if(info.status == "NEW_SETUP") statusText = "⚡ NEW EXECUTION";
-      else if(info.status == "TAKE_PROFIT") statusText = "🎯 TAKE PROFIT REACHED";
-      else if(info.status == "STOP_LOSS") statusText = "🛑 STOP LOSS HIT";
-      else if(info.status == "WATCHLIST") statusText = "👀 MARKET SETUP / WATCHLIST";
-
-      caption += "📍 <b>Status:</b> " + statusText + "\n";
-      caption += directionEmoji + " <b>Action:</b> <b>" + info.orderType + "</b> @ <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
-
-      if(info.volume > 0)
+      // 1. Header Banner & Status Classification
+      if(info.status == "PARTIAL_CLOSE")
       {
-         caption += "📦 <b>Volume:</b> " + DoubleToString(info.volume, 2) + " Lots";
-         if(info.ticket > 0)
-            caption += " (Ticket #" + IntegerToString(info.ticket) + ")";
+         caption += "✂️ <b>PARTIAL PROFIT TAKEN: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Action:</b> Secured Partial Profits\n";
+         caption += "💰 <b>Realized Gain:</b> +$" + DoubleToString(MathAbs(info.floatingPnL), 2) + " " + ccy;
+         if(info.floatingPips > 0) caption += " (+" + DoubleToString(info.floatingPips, 1) + " pips)";
          caption += "\n";
+         caption += "📦 <b>Closed Volume:</b> " + DoubleToString(info.closedVolume, 2) + " Lots\n";
+         caption += "🏃 <b>Still Running:</b> " + DoubleToString(info.remainingVolume, 2) + " Lots\n";
+         caption += "🏁 <b>Exit Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         if(info.entryPrice > 0) caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+         caption += "💡 <i>Suggestion: Move Stop Loss to Breakeven to secure a risk-free trade!</i>\n";
       }
-
-      // 3. In-Trade Live PnL & Current Price
-      if(info.status == "IN_TRADE" || info.floatingPnL != 0)
+      else if(info.status == "TAKE_PROFIT")
       {
-         string pnlPrefix = (info.floatingPnL >= 0) ? "+$" : "-$";
-         string pipsPrefix = (info.floatingPips >= 0) ? "+" : "";
-         caption += "💰 <b>Floating PnL:</b> " + pnlPrefix + DoubleToString(MathAbs(info.floatingPnL), 2) + 
-                    " (" + pipsPrefix + DoubleToString(info.floatingPips, 1) + " pips)\n";
-         caption += "🏷️ <b>Current Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         caption += "🎯 <b>TAKE PROFIT HIT: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Status:</b> 🎯 TARGET FULLY REACHED ✅\n";
+         caption += "💰 <b>Total Profit:</b> +$" + DoubleToString(MathAbs(info.floatingPnL), 2) + " " + ccy;
+         if(info.tpPips > 0) caption += " (+" + DoubleToString(info.tpPips, 1) + " pips)";
+         caption += "\n";
+         caption += "🏁 <b>Exit Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         if(info.entryPrice > 0) caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+      }
+      else if(info.status == "STOP_LOSS")
+      {
+         caption += "🛑 <b>STOP LOSS HIT: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Status:</b> 🛑 STOPPED OUT (Risk Protected)\n";
+         caption += "💸 <b>Realized PnL:</b> -$" + DoubleToString(MathAbs(info.floatingPnL), 2) + " " + ccy;
+         if(info.slPips > 0) caption += " (-" + DoubleToString(info.slPips, 1) + " pips)";
+         caption += "\n";
+         caption += "🏁 <b>Exit Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         if(info.entryPrice > 0) caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+      }
+      else if(info.status == "MANUAL_PROFIT")
+      {
+         caption += "💰 <b>MANUAL CASHOUT: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Status:</b> 🟢 Closed Early in Profit\n";
+         caption += "💰 <b>Realized Profit:</b> +$" + DoubleToString(MathAbs(info.floatingPnL), 2) + " " + ccy;
+         if(info.floatingPips > 0) caption += " (+" + DoubleToString(info.floatingPips, 1) + " pips)";
+         caption += "\n";
+         caption += "🏁 <b>Exit Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         if(info.entryPrice > 0) caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+      }
+      else if(info.status == "MANUAL_LOSS")
+      {
+         caption += "⚠️ <b>MANUAL CLOSE: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Status:</b> ⚠️ Trader Cut Position Early\n";
+         caption += "💸 <b>Loss Managed:</b> -$" + DoubleToString(MathAbs(info.floatingPnL), 2) + " " + ccy;
+         if(info.floatingPips < 0) caption += " (-" + DoubleToString(MathAbs(info.floatingPips), 1) + " pips)";
+         caption += "\n";
+         caption += "🏁 <b>Exit Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         if(info.entryPrice > 0) caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+      }
+      else if(info.status == "BREAKEVEN")
+      {
+         caption += "⚖️ <b>CLOSED AT BREAKEVEN: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Status:</b> ⚖️ Breakeven Exit ($0.00 Risk)\n";
+         caption += "🏁 <b>Exit Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         if(info.entryPrice > 0) caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+      }
+      else if(info.status == "ORDER_CANCELED")
+      {
+         caption += "❌ <b>ORDER CANCELED: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Status:</b> ❌ " + info.orderType + "\n";
+         caption += "🏷️ <b>Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+         if(info.volume > 0)
+            caption += "📦 <b>Volume:</b> " + DoubleToString(info.volume, 2) + " Lots\n";
+         caption += "💡 <i>Setup invalidated or canceled by trader.</i>\n";
+      }
+      else if(info.status == "PENDING_SETUP")
+      {
+         caption += "⏳ <b>PENDING ORDER SETUP: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Order Type:</b> <b>" + info.orderType + "</b> @ <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+         if(info.volume > 0)
+            caption += "📦 <b>Order Volume:</b> " + DoubleToString(info.volume, 2) + " Lots\n";
+         caption += "🏷️ <b>Market Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+      }
+      else
+      {
+         // Active running trade or live setup
+         string directionEmoji = (StringFind(info.orderType, "BUY") >= 0) ? "🟢" : "🔴";
+         string statusText = (info.status == "IN_TRADE") ? "🟢 IN TRADE (RUNNING)" : (info.status == "NEW_SETUP" ? "🚀 LIVE EXECUTION" : "👀 MARKET SETUP");
+
+         caption += "📊 <b>" + info.symbol + " • " + tfStr + " ANALYSIS & SIGNAL</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Status:</b> " + statusText + "\n";
+         caption += directionEmoji + " <b>Action:</b> <b>" + info.orderType + "</b> @ <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+
+         if(info.volume > 0)
+         {
+            caption += "📦 <b>Volume:</b> " + DoubleToString(info.volume, 2) + " Lots";
+            if(info.ticket > 0)
+               caption += " (Ticket #" + IntegerToString(info.ticket) + ")";
+            caption += "\n";
+         }
+
+         if(info.status == "IN_TRADE" || info.floatingPnL != 0)
+         {
+            string pnlPrefix = (info.floatingPnL >= 0) ? "+$" : "-$";
+            string pipsPrefix = (info.floatingPips >= 0) ? "+" : "";
+            caption += "💰 <b>Floating PnL:</b> " + pnlPrefix + DoubleToString(MathAbs(info.floatingPnL), 2) + " " + ccy + 
+                       " (" + pipsPrefix + DoubleToString(info.floatingPips, 1) + " pips)\n";
+            caption += "🏷️ <b>Current Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         }
       }
 
       caption += "─────────────────────────\n";
 
-      // 4. Stop Loss
-      if(info.stopLoss > 0)
+      // 2. Risk & Target Levels (only for active or pending setups)
+      if(info.status == "IN_TRADE" || info.status == "NEW_SETUP" || info.status == "PENDING_SETUP" || info.status == "WATCHLIST")
       {
-         caption += "🛡️ <b>Stop Loss:</b> <code>" + DoubleToString(info.stopLoss, digits) + "</code>";
-         if(info.slPips > 0)
-            caption += " (-" + DoubleToString(info.slPips, 1) + " pips)";
-         caption += "\n";
-      }
-      else
-      {
-         caption += "🛡️ <b>Stop Loss:</b> <i>Not Set (Open Risk)</i>\n";
-      }
-
-      // 5. Multi-Tier Take Profit Targets
-      if(info.takeProfit > 0)
-      {
-         // If user has a final TP, calculate TP1 and TP2 milestones
-         if(info.tp1Price > 0 && info.tp1Price != info.takeProfit)
+         if(info.stopLoss > 0)
          {
-            double tp1Pips = (pipSize > 0) ? MathAbs(info.tp1Price - info.entryPrice) / pipSize : 0;
-            caption += "🎯 <b>Take Profit 1 (1:1):</b> <code>" + DoubleToString(info.tp1Price, digits) + 
-                       "</code> (+" + DoubleToString(tp1Pips, 1) + " pips)\n";
+            caption += "🛡️ <b>Stop Loss:</b> <code>" + DoubleToString(info.stopLoss, digits) + "</code>";
+            if(info.slPips > 0)
+               caption += " (-" + DoubleToString(info.slPips, 1) + " pips)";
+            caption += "\n";
          }
 
-         if(info.tp2Price > 0 && info.tp2Price < info.takeProfit && (info.orderType == "BUY" ? info.tp2Price < info.takeProfit : info.tp2Price > info.takeProfit))
+         if(info.takeProfit > 0)
          {
-            double tp2Pips = (pipSize > 0) ? MathAbs(info.tp2Price - info.entryPrice) / pipSize : 0;
-            caption += "🎯 <b>Take Profit 2 (1:2):</b> <code>" + DoubleToString(info.tp2Price, digits) + 
-                       "</code> (+" + DoubleToString(tp2Pips, 1) + " pips)\n";
-         }
+            if(info.tp1Price > 0 && info.tp1Price != info.takeProfit)
+            {
+               double tp1Pips = (pipSize > 0) ? MathAbs(info.tp1Price - info.entryPrice) / pipSize : 0;
+               caption += "🎯 <b>Take Profit 1 (1:1):</b> <code>" + DoubleToString(info.tp1Price, digits) + 
+                          "</code> (+" + DoubleToString(tp1Pips, 1) + " pips)\n";
+            }
 
-         caption += "🎯 <b>Take Profit (Final):</b> <code>" + DoubleToString(info.takeProfit, digits) + "</code>";
-         if(info.tpPips > 0)
-            caption += " (+" + DoubleToString(info.tpPips, 1) + " pips)";
-         caption += "\n";
+            if(info.tp2Price > 0 && info.tp2Price < info.takeProfit && (info.orderType == "BUY" ? info.tp2Price < info.takeProfit : info.tp2Price > info.takeProfit))
+            {
+               double tp2Pips = (pipSize > 0) ? MathAbs(info.tp2Price - info.entryPrice) / pipSize : 0;
+               caption += "🎯 <b>Take Profit 2 (1:2):</b> <code>" + DoubleToString(info.tp2Price, digits) + 
+                          "</code> (+" + DoubleToString(tp2Pips, 1) + " pips)\n";
+            }
 
-         if(info.riskRewardRatio > 0)
-         {
-            caption += "⚖️ <b>Risk : Reward:</b> <b>1 : " + DoubleToString(info.riskRewardRatio, 2) + "</b>\n";
+            caption += "🎯 <b>Take Profit (Final):</b> <code>" + DoubleToString(info.takeProfit, digits) + "</code>";
+            if(info.tpPips > 0)
+               caption += " (+" + DoubleToString(info.tpPips, 1) + " pips)";
+            caption += "\n";
+
+            if(info.riskRewardRatio > 0)
+            {
+               caption += "⚖️ <b>Risk : Reward:</b> <b>1 : " + DoubleToString(info.riskRewardRatio, 2) + "</b>\n";
+            }
          }
       }
 
-      // 6. Market Context (Spread & Server Time)
+      // 3. Market Context
       if(info.spreadPips > 0)
       {
          caption += "📏 <b>Spread:</b> " + DoubleToString(info.spreadPips, 1) + " pips\n";
       }
-      caption += "🕒 <b>Server Time:</b> " + TimeToString(info.signalTime, TIME_DATE|TIME_MINUTES) + "\n";
+      caption += "🕒 <b>Time:</b> " + TimeToString(info.signalTime, TIME_DATE|TIME_MINUTES) + "\n";
 
-      // 7. Custom Trader Commentary (From on-chart note box)
-      if(StringLen(info.customComment) > 0 && info.customComment != "Type trade note / commentary here..." && info.customComment != "Manual Signal Snapshot")
+      // 4. Custom Trader Commentary (With HTML Entity Escaping!)
+      if(StringLen(info.customComment) > 0 && 
+         info.customComment != "Type trade note / commentary here..." && 
+         info.customComment != "Manual Signal Snapshot" &&
+         StringFind(info.customComment, "⚠️") < 0)
       {
          caption += "─────────────────────────\n";
          caption += "💬 <b>Trader's Commentary:</b>\n";
-         caption += "<i>\"" + info.customComment + "\"</i>\n";
+         // Strictly escape <, >, & so user commentary never causes Telegram 400 Bad Request
+         caption += "<i>\"" + CTelegramClient::EscapeHtml(info.customComment) + "\"</i>\n";
       }
 
       caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
 
-      // 8. Branding & Attribution
+      // 5. Attribution & Branding
       if(m_isLiteMode)
       {
          caption += "📢 <b>Powered by TeleSnap Pro</b>\n";

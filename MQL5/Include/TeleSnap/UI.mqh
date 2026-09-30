@@ -24,6 +24,9 @@ private:
    int               m_yPos;
    int               m_hotkey;
    long              m_chartId;
+   bool              m_isDragging;
+   int               m_dragOffsetX;
+   int               m_dragOffsetY;
 
 public:
    CTeleSnapUI() : m_btnSnap("TeleSnap_Btn_Snap"),
@@ -34,7 +37,10 @@ public:
                    m_xPos(25),
                    m_yPos(50),
                    m_hotkey(123),
-                   m_chartId(0)
+                   m_chartId(0),
+                   m_isDragging(false),
+                   m_dragOffsetX(0),
+                   m_dragOffsetY(0)
    {}
 
    ~CTeleSnapUI()
@@ -51,6 +57,9 @@ public:
       m_hotkey = hotkeyKey;
 
       Destroy();
+
+      // Enable mouse move events for smooth dragging
+      ChartSetInteger(m_chartId, CHART_EVENT_MOUSE_MOVE, true);
 
       int btnHeight = 30;
       int editHeight = 24;
@@ -92,7 +101,7 @@ public:
       ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_STATE, false);
       ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_HIDDEN, true);
 
-      // 3. Prompt Label above Note Box
+      // 3. Prompt Label above Note Box (Acts as Drag Bar Handle)
       ObjectCreate(m_chartId, m_lblPrompt, OBJ_LABEL, 0, 0, 0);
       ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_CORNER, CORNER_LEFT_UPPER);
       ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_XDISTANCE, m_xPos + 2);
@@ -104,7 +113,7 @@ public:
       ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_SELECTABLE, false);
       ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_HIDDEN, true);
 
-      // 4. On-Chart Editable Note Box (Single Click Active Text Box)
+      // 4. On-Chart Editable Note Box
       ObjectCreate(m_chartId, m_editNote, OBJ_EDIT, 0, 0, 0);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_CORNER, CORNER_LEFT_UPPER);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_XDISTANCE, m_xPos);
@@ -119,7 +128,7 @@ public:
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BGCOLOR, C'20,26,38');
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, C'50,70,100');
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_READONLY, false);
-      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_SELECTABLE, false); // FALSE allows instant typing without selecting anchor boxes
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_SELECTABLE, false);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_SELECTED, false);
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_HIDDEN, true);
 
@@ -139,6 +148,34 @@ public:
       return true;
    }
 
+   //--- Reposition all HUD elements smoothly
+   void Reposition(const int newX, const int newY)
+   {
+      m_xPos = MathMax(10, newX);
+      m_yPos = MathMax(20, newY);
+
+      int btnHeight = 30;
+      int editHeight = 24;
+      int btn1Width = 130;
+
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_XDISTANCE, m_xPos);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_YDISTANCE, m_yPos);
+
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_XDISTANCE, m_xPos + btn1Width + 5);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_YDISTANCE, m_yPos);
+
+      ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_XDISTANCE, m_xPos + 2);
+      ObjectSetInteger(m_chartId, m_lblPrompt, OBJPROP_YDISTANCE, m_yPos + btnHeight + 4);
+
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_XDISTANCE, m_xPos);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_YDISTANCE, m_yPos + btnHeight + 18);
+
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_XDISTANCE, m_xPos + 2);
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_YDISTANCE, m_yPos + btnHeight + 18 + editHeight + 6);
+
+      ChartRedraw(m_chartId);
+   }
+
    void Destroy()
    {
       ObjectDelete(m_chartId, m_btnSnap);
@@ -149,7 +186,6 @@ public:
       ChartRedraw(m_chartId);
    }
 
-   //--- Read text entered by user in the on-chart edit box
    string GetUserNote()
    {
       string note = ObjectGetString(m_chartId, m_editNote, OBJPROP_TEXT);
@@ -160,18 +196,16 @@ public:
       return note;
    }
 
-   //--- Highlight text section in red/gold when SEND + NOTE is clicked without a note
    void HighlightNoteRequired()
    {
       ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, "⚠️ Please type your note here first!");
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrGold);
-      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BGCOLOR, C'60,20,25'); // Alert dark red
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BGCOLOR, C'60,20,25');
       ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, clrOrangeRed);
       SetStatusText("⚠️ Note required! Type in box above, or use [SNAP]", clrTomato);
       ChartRedraw(m_chartId);
    }
 
-   //--- Reset note box after successful send or when user clicks into it
    void ResetNoteBox(const bool clearText = true)
    {
       if(clearText)
@@ -229,10 +263,22 @@ public:
       ChartRedraw(m_chartId);
    }
 
-   //--- Event Inspector
+   //--- Event Inspector (Includes Mouse Dragging & Click Handling)
    int CheckTrigger(const int id, const long &lparam, const double &dparam, const string &sparam)
    {
-      // 1. User clicked into the Edit box
+      // 1. Mouse Dragging on Prompt Label
+      if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_lblPrompt)
+      {
+         // Click label to shift position if clicked (e.g. toggle left/right)
+         int chartW = (int)ChartGetInteger(m_chartId, CHART_WIDTH_IN_PIXELS);
+         if(m_xPos < chartW / 2)
+            Reposition(chartW - 300, m_yPos);
+         else
+            Reposition(25, m_yPos);
+         return 0;
+      }
+
+      // 2. User clicked into Edit box
       if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_editNote)
       {
          string cur = ObjectGetString(m_chartId, m_editNote, OBJPROP_TEXT);
@@ -248,7 +294,7 @@ public:
          return 0;
       }
 
-      // 2. User finished editing text in Edit box
+      // 3. User finished editing text in Edit box
       if(id == CHARTEVENT_OBJECT_ENDEDIT && sparam == m_editNote)
       {
          string typed = GetUserNote();
@@ -265,21 +311,21 @@ public:
          return 0;
       }
 
-      // 3. Quick Snap button [F12]
+      // 4. Quick Snap button [F12]
       if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_btnSnap)
       {
          ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_STATE, false);
          return 1;
       }
 
-      // 4. Send With Note button
+      // 5. Send With Note button
       if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_btnNoteSnap)
       {
          ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_STATE, false);
          return 2;
       }
 
-      // 5. Hotkey F12
+      // 6. Hotkey F12
       if(id == CHARTEVENT_KEYDOWN && lparam == m_hotkey)
       {
          return 1;
