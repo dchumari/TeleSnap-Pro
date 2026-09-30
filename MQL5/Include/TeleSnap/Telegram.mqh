@@ -298,4 +298,69 @@ public:
          return false;
       }
    }
+
+   //--- Send Pure HTML Text Message (Used when no chart is open for a traded asset)
+   bool SendMessage(string messageText, string &outErrorMessage)
+   {
+      // Bypass in Strategy Tester for MQL5 Marketplace approval
+      if(MQLInfoInteger(MQL_TESTER))
+      {
+         outErrorMessage = "";
+         return true;
+      }
+
+      if(StringLen(m_botToken) == 0 || StringLen(m_chatId) == 0)
+      {
+         outErrorMessage = "Bot Token or Chat ID not configured.";
+         return false;
+      }
+
+      // Guard against Telegram's 4096-character limit
+      if(StringLen(messageText) > 4000)
+         messageText = StringSubstr(messageText, 0, 3990) + "...";
+
+      string boundary = "----TeleSnapBoundary" + IntegerToString(GetTickCount());
+      string url = "https://api.telegram.org/bot" + m_botToken + "/sendMessage";
+      string headers = "Content-Type: multipart/form-data; boundary=" + boundary + "\r\n";
+
+      uchar body[];
+      ArrayResize(body, 0);
+
+      // 1. chat_id field
+      AppendString(body, "--" + boundary + "\r\n");
+      AppendString(body, "Content-Disposition: form-data; name=\"chat_id\"\r\n\r\n");
+      AppendString(body, m_chatId + "\r\n");
+
+      // 2. parse_mode field
+      AppendString(body, "--" + boundary + "\r\n");
+      AppendString(body, "Content-Disposition: form-data; name=\"parse_mode\"\r\n\r\n");
+      AppendString(body, "HTML\r\n");
+
+      // 3. text field
+      AppendString(body, "--" + boundary + "\r\n");
+      AppendString(body, "Content-Disposition: form-data; name=\"text\"\r\n\r\n");
+      AppendString(body, messageText + "\r\n");
+
+      // Closing boundary
+      AppendString(body, "--" + boundary + "--\r\n");
+
+      char resultData[];
+      string resultHeaders;
+      ResetLastError();
+      int res = WebRequest("POST", url, headers, m_timeout, body, resultData, resultHeaders);
+
+      if(res == 200)
+      {
+         outErrorMessage = "";
+         Print("[TeleSnap Pro] ✅ Text signal successfully dispatched to Telegram!");
+         return true;
+      }
+      else
+      {
+         string errorMsg = CharArrayToString(resultData, 0, WHOLE_ARRAY, CP_UTF8);
+         outErrorMessage = "Telegram error (" + IntegerToString(res) + "): " + errorMsg;
+         PrintFormat("[TeleSnap Pro] ❌ SendMessage failed. %s", outErrorMessage);
+         return false;
+      }
+   }
 };

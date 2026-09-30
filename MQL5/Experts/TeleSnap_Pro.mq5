@@ -267,11 +267,8 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
          targetChartId = g_hub.FindLinkedChartForSymbol(signal.symbol);
       }
 
-      if(targetChartId == 0)
-         targetChartId = ChartID();
-
       // Ensure signal timeframe matches the actual targeted chart
-      if(targetChartId > 0 && targetChartId != ChartID())
+      if(targetChartId > 0)
          signal.timeframe = ChartPeriod(targetChartId);
 
       ExecuteSnapAndSend(targetChartId, eventReason, "", signal);
@@ -347,15 +344,19 @@ void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, co
 void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, const string userNote, const TradeSignalInfo &preloadedSignal)
 {
    uint startTime = GetTickCount();
-   long activeTarget = (targetChartId > 0) ? targetChartId : ChartID();
+   bool isAutoEvent = (triggerSource != "MANUAL_SNAP" && triggerSource != "MANUAL_NOTE_SNAP" && 
+                       triggerSource != "REMOTE_SNAP" && triggerSource != "REMOTE_NOTE_SNAP");
+
+   bool hasDedicatedChart = (targetChartId > 0 && (!InpEnableCommandCenter || targetChartId != ChartID()));
+   long activeTarget = hasDedicatedChart ? targetChartId : ChartID();
    string targetSymbol = ChartSymbol(activeTarget);
    if(StringLen(targetSymbol) == 0) targetSymbol = _Symbol;
    ENUM_TIMEFRAMES targetTf = ChartPeriod(activeTarget);
    if(targetTf == 0) targetTf = (ENUM_TIMEFRAMES)_Period;
 
-   if(InpEnableCommandCenter)
+   if(InpEnableCommandCenter && hasDedicatedChart)
       g_hub.SetRemoteStateProcessing(activeTarget);
-   else
+   else if(!InpEnableCommandCenter)
       g_ui.SetStateProcessing();
 
    TradeSignalInfo signal;
@@ -399,10 +400,36 @@ void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, co
       signal.customComment = userNote;
    }
 
-   // 2. Draw temporary on-chart watermark on the EXACT target chart
+   // 2. Build rich signal caption
+   string caption = g_watermark.BuildSignalCaption(signal, InpCaptionStyle);
+
+   // 3. Fallback: If no dedicated chart exists for this symbol (e.g. order deleted from trade list), dispatch as pure HTML text!
+   if(!hasDedicatedChart && isAutoEvent)
+   {
+      string errorMsg = "";
+      bool sent = g_telegram.SendMessage(caption, errorMsg);
+      uint elapsedMs = GetTickCount() - startTime;
+
+      if(sent)
+      {
+         PrintFormat("[TeleSnap Pro] ℹ️ Dispatched text signal for %s (no dedicated chart open) in %u ms to %s", 
+                     signal.symbol, elapsedMs, g_telegram.GetChatId());
+         if(InpEnableCommandCenter)
+            g_hub.AddLog(signal.symbol, signal.orderType + " (Text)", elapsedMs, true);
+      }
+      else
+      {
+         PrintFormat("[TeleSnap Pro] ❌ SendMessage failed for %s: %s", signal.symbol, errorMsg);
+         if(InpEnableCommandCenter)
+            g_hub.AddLog(signal.symbol, "Text Dispatch Failed", elapsedMs, false);
+      }
+      return;
+   }
+
+   // 4. Dedicated chart exists: Draw temporary on-chart watermark on the EXACT target chart
    g_watermark.DrawOnChartWatermark(activeTarget, InpWatermarkPos, InpWatermarkColor);
 
-   // 3. Capture high-resolution screenshot into memory buffer
+   // 5. Capture high-resolution screenshot into memory buffer
    uchar photoBytes[];
    bool captured = g_capture.CaptureChartToBuffer(activeTarget, InpResolution, photoBytes);
 
@@ -428,10 +455,7 @@ void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, co
       return;
    }
 
-   // 4. Construct rich informative caption
-   string caption = g_watermark.BuildSignalCaption(signal, InpCaptionStyle);
-
-   // 5. Dispatch via native HTTPS WebRequest
+   // 6. Dispatch via native HTTPS WebRequest
    string errorMsg = "";
    bool success = g_telegram.SendPhoto(photoBytes, caption, errorMsg);
    uint elapsedMs = GetTickCount() - startTime;

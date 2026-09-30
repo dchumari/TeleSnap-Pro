@@ -470,7 +470,16 @@ public:
          }
       }
 
-      return 0;
+      // Third pass: Any open chart in the terminal for that symbol (even if unlinked)
+      for(int i = 0; i < ArraySize(m_charts); i++)
+      {
+         if(StringCompare(m_charts[i].symbol, symbol, false) == 0)
+         {
+            return m_charts[i].chartId;
+         }
+      }
+
+      return 0; // Truly no open chart in MT5 for this symbol
    }
 
    //--- Log Activity to Command Center Feed
