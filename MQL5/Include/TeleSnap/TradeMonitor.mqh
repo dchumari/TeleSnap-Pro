@@ -10,6 +10,16 @@
 #include "Config.mqh"
 
 //+------------------------------------------------------------------+
+//| Stop Loss Tracking Cache Entry                                   |
+//+------------------------------------------------------------------+
+struct SlTrackingEntry
+{
+   ulong    posTicket;
+   double   lastSl;
+   datetime lastAlertTime;
+};
+
+//+------------------------------------------------------------------+
 //| Trade Execution, Position Analytics & SL/TP Event Listener       |
 //+------------------------------------------------------------------+
 class CTradeMonitor
@@ -19,6 +29,7 @@ private:
    ENUM_TIMEFRAMES   m_timeframe;
    ulong             m_magicFilter;
    bool              m_allSymbols;
+   SlTrackingEntry   m_slCache[];
 
    //--- Calculate pip size for symbol
    double GetPipSize(const string symbol)
@@ -30,8 +41,27 @@ private:
       return point;
    }
 
+   //--- Remove position from SL cache when closed
+   void CleanSlCache(const ulong posId)
+   {
+      for(int i = 0; i < ArraySize(m_slCache); i++)
+      {
+         if(m_slCache[i].posTicket == posId)
+         {
+            for(int j = i; j < ArraySize(m_slCache) - 1; j++)
+               m_slCache[j] = m_slCache[j + 1];
+            ArrayResize(m_slCache, ArraySize(m_slCache) - 1);
+            break;
+         }
+      }
+   }
+
 public:
-   CTradeMonitor() : m_magicFilter(0), m_allSymbols(false) {}
+   CTradeMonitor() : m_magicFilter(0), m_allSymbols(false)
+   {
+      ArrayResize(m_slCache, 0);
+   }
+
    ~CTradeMonitor() {}
 
    void Init(const string symbol, const ENUM_TIMEFRAMES timeframe, const ulong magicFilter = 0, const bool allSymbols = false)
@@ -40,36 +70,77 @@ public:
       m_timeframe = timeframe;
       m_magicFilter = magicFilter;
       m_allSymbols = allSymbols;
+      ArrayResize(m_slCache, 0);
    }
 
-   //--- Build complete trade analytics from active open position on chart
+   //--- Build complete trade analytics from active open position on chart (aggregates basket if multiple positions)
    bool GetActivePositionSignal(TradeSignalInfo &outSignal)
    {
-      if(!PositionSelect(m_symbol))
-         return false;
+      int posCount = 0;
+      double totalVol = 0.0;
+      double netProfit = 0.0;
+      double totalWeightedPrice = 0.0;
+      ulong firstTicket = 0;
+      ENUM_POSITION_TYPE pType = POSITION_TYPE_BUY;
+      datetime earliestTime = 0;
+      double sl = 0.0, tp = 0.0;
 
-      if(m_magicFilter > 0 && (ulong)PositionGetInteger(POSITION_MAGIC) != m_magicFilter)
+      int totalPos = PositionsTotal();
+      for(int i = 0; i < totalPos; i++)
+      {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket > 0 && PositionGetString(POSITION_SYMBOL) == m_symbol)
+         {
+            if(m_magicFilter > 0 && (ulong)PositionGetInteger(POSITION_MAGIC) != m_magicFilter)
+               continue;
+
+            posCount++;
+            double vol = PositionGetDouble(POSITION_VOLUME);
+            double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+            double profit = PositionGetDouble(POSITION_PROFIT);
+            datetime pTime = (datetime)PositionGetInteger(POSITION_TIME);
+
+            totalVol += vol;
+            netProfit += profit;
+            totalWeightedPrice += (openPrice * vol);
+
+            if(posCount == 1)
+            {
+               firstTicket = ticket;
+               pType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+               earliestTime = pTime;
+               sl = PositionGetDouble(POSITION_SL);
+               tp = PositionGetDouble(POSITION_TP);
+            }
+            else
+            {
+               if(pTime < earliestTime) earliestTime = pTime;
+            }
+         }
+      }
+
+      if(posCount == 0)
          return false;
 
       double pipSize = GetPipSize(m_symbol);
-      ENUM_POSITION_TYPE pType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
       bool isBuy = (pType == POSITION_TYPE_BUY);
 
       outSignal.symbol = m_symbol;
       outSignal.timeframe = m_timeframe;
       outSignal.status = "IN_TRADE";
       outSignal.orderType = isBuy ? "BUY" : "SELL";
-      outSignal.ticket = PositionGetInteger(POSITION_TICKET);
-      outSignal.volume = PositionGetDouble(POSITION_VOLUME);
+      outSignal.ticket = firstTicket;
+      outSignal.volume = totalVol;
       outSignal.closedVolume = 0;
-      outSignal.remainingVolume = outSignal.volume;
-      outSignal.entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-      outSignal.currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
-      outSignal.stopLoss = PositionGetDouble(POSITION_SL);
-      outSignal.takeProfit = PositionGetDouble(POSITION_TP);
-      outSignal.floatingPnL = PositionGetDouble(POSITION_PROFIT);
+      outSignal.remainingVolume = totalVol;
+      outSignal.entryPrice = (totalVol > 0) ? (totalWeightedPrice / totalVol) : PositionGetDouble(POSITION_PRICE_OPEN);
+      outSignal.currentPrice = SymbolInfoDouble(m_symbol, isBuy ? SYMBOL_BID : SYMBOL_ASK);
+      outSignal.stopLoss = sl;
+      outSignal.takeProfit = tp;
+      outSignal.floatingPnL = netProfit;
       outSignal.currency = AccountInfoString(ACCOUNT_CURRENCY);
-      outSignal.signalTime = (datetime)PositionGetInteger(POSITION_TIME);
+      outSignal.signalTime = (earliestTime > 0) ? earliestTime : TimeCurrent();
+      outSignal.posCount = posCount;
 
       // Pips calculation
       if(pipSize > 0)
@@ -103,6 +174,11 @@ public:
       double point = SymbolInfoDouble(m_symbol, SYMBOL_POINT);
       long spreadPoints = SymbolInfoInteger(m_symbol, SYMBOL_SPREAD);
       outSignal.spreadPips = (pipSize > 0) ? (spreadPoints * point) / pipSize : 0;
+
+      if(posCount > 1)
+      {
+         outSignal.customComment = "🧺 Multi-Position Basket: " + IntegerToString(posCount) + " Positions | Combined Vol: " + DoubleToString(totalVol, 2) + " Lots";
+      }
 
       return true;
    }
@@ -343,7 +419,110 @@ public:
          return false;
       }
 
-      // 3. Trade Deal Added (Position Open, Close, Partial, TP, SL, Breakeven, Manual Close)
+      // 3. Position Modification (Stop Loss moved to Breakeven or Trailed into Profit)
+      if(trans.type == TRADE_TRANSACTION_POSITION)
+      {
+         ulong posTicket = trans.position;
+         if(posTicket > 0 && PositionSelectByTicket(posTicket))
+         {
+            if(m_magicFilter > 0 && (ulong)PositionGetInteger(POSITION_MAGIC) != m_magicFilter)
+               return false;
+
+            string posSymbol = PositionGetString(POSITION_SYMBOL);
+            if(StringLen(posSymbol) == 0) posSymbol = trans.symbol;
+            if(!m_allSymbols && StringCompare(posSymbol, m_symbol, false) != 0)
+               return false;
+
+            double newSl = trans.price_sl;
+            if(newSl <= 0)
+               return false; // Removing SL or no SL set
+
+            double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+            ENUM_POSITION_TYPE pType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+            bool isBuy = (pType == POSITION_TYPE_BUY);
+            double pipSize = GetPipSize(posSymbol);
+            if(pipSize <= 0) return false;
+
+            // Check SL cache to avoid duplicate spam for the same SL modification
+            int cacheIdx = -1;
+            for(int k = 0; k < ArraySize(m_slCache); k++)
+            {
+               if(m_slCache[k].posTicket == posTicket)
+               {
+                  cacheIdx = k;
+                  break;
+               }
+            }
+
+            if(cacheIdx >= 0)
+            {
+               // If SL hasn't changed significantly or modified within last 3 seconds, ignore
+               if(MathAbs(m_slCache[cacheIdx].lastSl - newSl) < (0.5 * pipSize) || 
+                  (TimeCurrent() - m_slCache[cacheIdx].lastAlertTime < 3))
+               {
+                  return false;
+               }
+            }
+            else
+            {
+               cacheIdx = ArraySize(m_slCache);
+               ArrayResize(m_slCache, cacheIdx + 1);
+               m_slCache[cacheIdx].posTicket = posTicket;
+            }
+
+            double slDiffPips = isBuy ? (newSl - openPrice) / pipSize : (openPrice - newSl) / pipSize;
+
+            // Only alert if SL is moved to Breakeven (flat/slight profit) or Trailed into profit!
+            // If moved to deeper loss (slDiffPips < -0.5), update cache and do not alert
+            if(slDiffPips < -0.5)
+            {
+               m_slCache[cacheIdx].lastSl = newSl;
+               m_slCache[cacheIdx].lastAlertTime = TimeCurrent();
+               return false;
+            }
+
+            outSignal.symbol = posSymbol;
+            outSignal.timeframe = m_timeframe;
+            outSignal.ticket = posTicket;
+            outSignal.volume = PositionGetDouble(POSITION_VOLUME);
+            outSignal.closedVolume = 0;
+            outSignal.remainingVolume = outSignal.volume;
+            outSignal.entryPrice = openPrice;
+            outSignal.currentPrice = PositionGetDouble(POSITION_PRICE_CURRENT);
+            outSignal.stopLoss = newSl;
+            outSignal.takeProfit = PositionGetDouble(POSITION_TP);
+            outSignal.floatingPnL = PositionGetDouble(POSITION_PROFIT);
+            outSignal.currency = AccountInfoString(ACCOUNT_CURRENCY);
+            outSignal.signalTime = TimeCurrent();
+
+            double point = SymbolInfoDouble(posSymbol, SYMBOL_POINT);
+            long spreadPts = SymbolInfoInteger(posSymbol, SYMBOL_SPREAD);
+            outSignal.spreadPips = (pipSize > 0) ? (spreadPts * point) / pipSize : 0;
+            outSignal.floatingPips = isBuy ? (outSignal.currentPrice - openPrice) / pipSize : (openPrice - outSignal.currentPrice) / pipSize;
+
+            if(slDiffPips >= -0.5 && slDiffPips <= 2.5)
+            {
+               outSignal.status = "SL_BREAKEVEN";
+               outSignal.orderType = isBuy ? "BUY (SL ➔ BREAKEVEN)" : "SELL (SL ➔ BREAKEVEN)";
+               outSignal.customComment = "🛡️ Stop Loss moved to Breakeven! Trade is now 100% Risk-Free ($0.00 Risk).";
+               outEventReason = "SL_BREAKEVEN";
+            }
+            else
+            {
+               outSignal.status = "SL_TRAILED";
+               outSignal.orderType = isBuy ? "BUY (SL TRAILED)" : "SELL (SL TRAILED)";
+               outSignal.customComment = "📈 Stop Loss Trailed! Secured +" + DoubleToString(slDiffPips, 1) + " pips in guaranteed profit.";
+               outEventReason = "SL_TRAILED";
+            }
+
+            m_slCache[cacheIdx].lastSl = newSl;
+            m_slCache[cacheIdx].lastAlertTime = TimeCurrent();
+            return true;
+         }
+         return false;
+      }
+
+      // 4. Trade Deal Added (Position Open, Close, Partial, TP, SL, Breakeven, Manual Close)
       if(trans.type != TRADE_TRANSACTION_DEAL_ADD)
          return false;
 
@@ -439,6 +618,9 @@ public:
          bool isStillOpen = (posId > 0 && PositionSelectByTicket(posId));
          double remainingVol = isStillOpen ? PositionGetDouble(POSITION_VOLUME) : 0.0;
          outSignal.remainingVolume = remainingVol;
+
+         if(!isStillOpen && posId > 0)
+            CleanSlCache(posId);
 
          // Inspect position history to extract original entry price and SL/TP
          double openPrice = 0.0;

@@ -227,6 +227,32 @@ public:
          caption += "🏁 <b>Exit Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
          if(info.entryPrice > 0) caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
       }
+      else if(info.status == "SL_BREAKEVEN")
+      {
+         caption += "🛡️ <b>RISK-FREE TRADE: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Action:</b> 🛡️ Stop Loss Moved to Breakeven\n";
+         caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+         caption += "🛡️ <b>New Stop Loss:</b> <code>" + DoubleToString(info.stopLoss, digits) + "</code> ($0.00 Risk)\n";
+         if(info.currentPrice > 0)
+            caption += "🏁 <b>Current Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         if(info.volume > 0)
+            caption += "📦 <b>Volume:</b> " + DoubleToString(info.volume, 2) + " Lots\n";
+         caption += "💡 <i>Position is fully protected against downside risk!</i>\n";
+      }
+      else if(info.status == "SL_TRAILED")
+      {
+         caption += "📈 <b>PROFIT LOCKED: " + info.symbol + " (" + tfStr + ")</b>\n";
+         caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+         caption += "📍 <b>Action:</b> 📈 Stop Loss Trailed\n";
+         caption += "🚪 <b>Entry Price:</b> <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+         caption += "🛡️ <b>Locked Stop Loss:</b> <code>" + DoubleToString(info.stopLoss, digits) + "</code>\n";
+         if(info.currentPrice > 0)
+            caption += "🏁 <b>Current Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+         if(info.volume > 0)
+            caption += "📦 <b>Volume:</b> " + DoubleToString(info.volume, 2) + " Lots\n";
+         caption += "💡 <i>Trailing Stop active: guaranteed profit secured!</i>\n";
+      }
       else if(info.status == "ORDER_CANCELED")
       {
          caption += "❌ <b>ORDER CANCELED: " + info.symbol + " (" + tfStr + ")</b>\n";
@@ -260,7 +286,9 @@ public:
          if(info.volume > 0)
          {
             caption += "📦 <b>Volume:</b> " + DoubleToString(info.volume, 2) + " Lots";
-            if(info.ticket > 0)
+            if(info.posCount > 1)
+               caption += " (" + IntegerToString(info.posCount) + " Positions Basket)";
+            else if(info.ticket > 0)
                caption += " (Ticket #" + IntegerToString(info.ticket) + ")";
             caption += "\n";
          }

@@ -52,6 +52,9 @@ private:
    datetime          m_lastChartScan;
    int               m_maxLogEntries;
    int               m_lastChartWidth;
+   ENUM_BASE_CORNER  m_remoteCorner;
+   int               m_remoteX;
+   int               m_remoteY;
 
    //--- Prefix constants for objects
    string            PrefixDash() const   { return "TeleSnap_Dash_"; }
@@ -64,7 +67,10 @@ public:
                    m_isConnected(false),
                    m_lastChartScan(0),
                    m_maxLogEntries(8),
-                   m_lastChartWidth(0)
+                   m_lastChartWidth(0),
+                   m_remoteCorner(CORNER_LEFT_UPPER),
+                   m_remoteX(25),
+                   m_remoteY(45)
    {
       ArrayResize(m_charts, 0);
       ArrayResize(m_activityLog, 0);
@@ -76,12 +82,16 @@ public:
    }
 
    //--- Initialize Command Center on host chart
-   void Init(const long hubChartId, const string botUser, const string chatTarget, const bool connected)
+   void Init(const long hubChartId, const string botUser, const string chatTarget, const bool connected,
+             const ENUM_BASE_CORNER remoteCorner = CORNER_LEFT_UPPER, const int remoteX = 25, const int remoteY = 45)
    {
       m_hubChartId = hubChartId;
       m_botUsername = botUser;
       m_chatTarget = chatTarget;
       m_isConnected = connected;
+      m_remoteCorner = remoteCorner;
+      m_remoteX = remoteX;
+      m_remoteY = remoteY;
 
       // Style host chart as sleek full-screen Command Center Dashboard
       SetupDashboardChart();
@@ -218,9 +228,13 @@ public:
    }
 
    //--- Inject Remote Floating HUD onto a Linked Trading Chart
-   void InjectRemoteHUD(const long targetChartId, const int x = 25, const int y = 45)
+   void InjectRemoteHUD(const long targetChartId, const int x = -1, const int y = -1, const ENUM_BASE_CORNER corner = (ENUM_BASE_CORNER)-1)
    {
       RemoveRemoteHUD(targetChartId);
+
+      int posX = (x >= 0) ? x : m_remoteX;
+      int posY = (y >= 0) ? y : m_remoteY;
+      ENUM_BASE_CORNER posCorner = (corner != (ENUM_BASE_CORNER)-1) ? corner : m_remoteCorner;
 
       int btnHeight = 28;
       int editHeight = 22;
@@ -228,12 +242,31 @@ public:
       int btn2Width = 125;
       int totalWidth = btn1Width + btn2Width + 5;
 
+      int b1X = posX;
+      int b2X = posX + btn1Width + 5;
+      int editX = posX;
+      int promptX = posX + 2;
+      int statX = posX + 2;
+
+      int bY = posY;
+      int promptY = posY + btnHeight + 4;
+      int editY = posY + btnHeight + 18;
+      int statY = posY + btnHeight + 18 + editHeight + 4;
+
+      if(posCorner == CORNER_LEFT_LOWER || posCorner == CORNER_RIGHT_LOWER)
+      {
+         statY = posY;
+         editY = posY + 18;
+         promptY = posY + 18 + editHeight + 2;
+         bY = posY + 18 + editHeight + 18;
+      }
+
       // 1. Button: Quick Snap [F12]
       string btnSnap = PrefixRemote() + "Snap";
       ObjectCreate(targetChartId, btnSnap, OBJ_BUTTON, 0, 0, 0);
-      ObjectSetInteger(targetChartId, btnSnap, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(targetChartId, btnSnap, OBJPROP_XDISTANCE, x);
-      ObjectSetInteger(targetChartId, btnSnap, OBJPROP_YDISTANCE, y);
+      ObjectSetInteger(targetChartId, btnSnap, OBJPROP_CORNER, posCorner);
+      ObjectSetInteger(targetChartId, btnSnap, OBJPROP_XDISTANCE, b1X);
+      ObjectSetInteger(targetChartId, btnSnap, OBJPROP_YDISTANCE, bY);
       ObjectSetInteger(targetChartId, btnSnap, OBJPROP_XSIZE, btn1Width);
       ObjectSetInteger(targetChartId, btnSnap, OBJPROP_YSIZE, btnHeight);
       ObjectSetString(targetChartId, btnSnap, OBJPROP_TEXT, "📸 SNAP [F12]");
@@ -249,9 +282,9 @@ public:
       // 2. Button: Send With Note
       string btnNoteSnap = PrefixRemote() + "NoteSnap";
       ObjectCreate(targetChartId, btnNoteSnap, OBJ_BUTTON, 0, 0, 0);
-      ObjectSetInteger(targetChartId, btnNoteSnap, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(targetChartId, btnNoteSnap, OBJPROP_XDISTANCE, x + btn1Width + 5);
-      ObjectSetInteger(targetChartId, btnNoteSnap, OBJPROP_YDISTANCE, y);
+      ObjectSetInteger(targetChartId, btnNoteSnap, OBJPROP_CORNER, posCorner);
+      ObjectSetInteger(targetChartId, btnNoteSnap, OBJPROP_XDISTANCE, b2X);
+      ObjectSetInteger(targetChartId, btnNoteSnap, OBJPROP_YDISTANCE, bY);
       ObjectSetInteger(targetChartId, btnNoteSnap, OBJPROP_XSIZE, btn2Width);
       ObjectSetInteger(targetChartId, btnNoteSnap, OBJPROP_YSIZE, btnHeight);
       ObjectSetString(targetChartId, btnNoteSnap, OBJPROP_TEXT, "💬 SEND + NOTE");
@@ -267,9 +300,9 @@ public:
       // 3. Prompt Label
       string lblPrompt = PrefixRemote() + "Prompt";
       ObjectCreate(targetChartId, lblPrompt, OBJ_LABEL, 0, 0, 0);
-      ObjectSetInteger(targetChartId, lblPrompt, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(targetChartId, lblPrompt, OBJPROP_XDISTANCE, x + 2);
-      ObjectSetInteger(targetChartId, lblPrompt, OBJPROP_YDISTANCE, y + btnHeight + 4);
+      ObjectSetInteger(targetChartId, lblPrompt, OBJPROP_CORNER, posCorner);
+      ObjectSetInteger(targetChartId, lblPrompt, OBJPROP_XDISTANCE, promptX);
+      ObjectSetInteger(targetChartId, lblPrompt, OBJPROP_YDISTANCE, promptY);
       ObjectSetString(targetChartId, lblPrompt, OBJPROP_FONT, "Segoe UI");
       ObjectSetInteger(targetChartId, lblPrompt, OBJPROP_FONTSIZE, 8);
       ObjectSetInteger(targetChartId, lblPrompt, OBJPROP_COLOR, clrSilver);
@@ -280,9 +313,9 @@ public:
       // 4. On-Chart Editable Note Box
       string editNote = PrefixRemote() + "Note";
       ObjectCreate(targetChartId, editNote, OBJ_EDIT, 0, 0, 0);
-      ObjectSetInteger(targetChartId, editNote, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(targetChartId, editNote, OBJPROP_XDISTANCE, x);
-      ObjectSetInteger(targetChartId, editNote, OBJPROP_YDISTANCE, y + btnHeight + 18);
+      ObjectSetInteger(targetChartId, editNote, OBJPROP_CORNER, posCorner);
+      ObjectSetInteger(targetChartId, editNote, OBJPROP_XDISTANCE, editX);
+      ObjectSetInteger(targetChartId, editNote, OBJPROP_YDISTANCE, editY);
       ObjectSetInteger(targetChartId, editNote, OBJPROP_XSIZE, totalWidth);
       ObjectSetInteger(targetChartId, editNote, OBJPROP_YSIZE, editHeight);
       ObjectSetString(targetChartId, editNote, OBJPROP_TEXT, "");
@@ -300,9 +333,9 @@ public:
       // 5. Status Subtitle Label
       string statusLbl = PrefixRemote() + "Status";
       ObjectCreate(targetChartId, statusLbl, OBJ_LABEL, 0, 0, 0);
-      ObjectSetInteger(targetChartId, statusLbl, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(targetChartId, statusLbl, OBJPROP_XDISTANCE, x + 2);
-      ObjectSetInteger(targetChartId, statusLbl, OBJPROP_YDISTANCE, y + btnHeight + 18 + editHeight + 4);
+      ObjectSetInteger(targetChartId, statusLbl, OBJPROP_CORNER, posCorner);
+      ObjectSetInteger(targetChartId, statusLbl, OBJPROP_XDISTANCE, statX);
+      ObjectSetInteger(targetChartId, statusLbl, OBJPROP_YDISTANCE, statY);
       ObjectSetString(targetChartId, statusLbl, OBJPROP_FONT, "Segoe UI");
       ObjectSetInteger(targetChartId, statusLbl, OBJPROP_FONTSIZE, 8);
       ObjectSetInteger(targetChartId, statusLbl, OBJPROP_COLOR, clrMediumSeaGreen);

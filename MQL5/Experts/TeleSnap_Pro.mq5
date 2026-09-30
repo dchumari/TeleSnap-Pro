@@ -30,6 +30,7 @@ input bool                   InpAutoLinkOpenCharts  = true;             // Auto-
 input group "=== 🤖 Telegram Bot Configuration ==="
 input string                 InpBotToken       = "";                      // Bot API Token (Leave blank to auto-load saved ID)
 input string                 InpChatId         = "";                      // Channel/Group Chat ID (Leave blank to auto-load saved ID)
+input long                   InpMessageThreadId= 0;                       // Telegram Forum Topic ID (0 = Main Channel / General Topic)
 input bool                   InpResetSavedIds  = false;                   // Set to TRUE to wipe saved IDs from this computer
 input bool                   InpSetDefaultTpl  = false;                   // Save as MT5 Default Template (Auto-opens on all charts)
 input int                    InpTimeoutMs      = 8000;                    // Network Timeout (milliseconds)
@@ -47,6 +48,11 @@ input ENUM_CAPTURE_TRIGGER   InpTriggerMode    = TRIGGER_AUTO_ALL_EVENTS; // Cap
 input ulong                  InpMagicFilter    = 0;                       // Filter by EA Magic Number (0 = All Trades & EAs)
 input int                    InpHotkeyKey      = 123;                     // Keyboard Hotkey (123 = F12)
 
+input group "=== 🖥️ Remote Floating HUD Settings (Linked Charts) ==="
+input ENUM_BASE_CORNER       InpRemoteHudCorner= CORNER_LEFT_UPPER;       // Remote HUD Corner Position
+input int                    InpRemoteHudX     = 25;                      // Remote HUD X Distance (Pixels)
+input int                    InpRemoteHudY     = 45;                      // Remote HUD Y Distance (Pixels)
+
 input group "=== 🖥️ Floating HUD Settings (Single Chart Mode) ==="
 input int                    InpHudX           = 30;                      // HUD Button X Offset (Pixels)
 input int                    InpHudY           = 50;                      // HUD Button Y Offset (Pixels)
@@ -59,6 +65,18 @@ CWatermarkEngine  g_watermark;
 CTeleSnapUI       g_ui;
 CTradeMonitor     g_monitor;
 CHubManager       g_hub;
+
+//--- Anti-Spam Signal Dispatch Queue
+struct QueuedSignalItem
+{
+   long              targetChartId;
+   string            triggerSource;
+   string            userNote;
+   TradeSignalInfo   signal;
+};
+
+QueuedSignalItem     g_signalQueue[];
+uint                 g_lastDispatchTick = 0;
 
 //--- Active state & credentials
 string            g_activeBotToken     = "";
@@ -127,7 +145,7 @@ int OnInit()
    }
 
    // 4. Initialize Telegram Client & Branding
-   g_telegram.Init(g_activeBotToken, g_activeChatId, InpTimeoutMs);
+   g_telegram.Init(g_activeBotToken, g_activeChatId, InpTimeoutMs, InpMessageThreadId);
    g_watermark.SetBranding(g_activeChannel, g_activeInvite);
 
    // 5. Preflight Connection Diagnostic Test
@@ -138,7 +156,7 @@ int OnInit()
    if(InpEnableCommandCenter)
    {
       string connTarget = (StringLen(chatTitle) > 0) ? chatTitle : g_telegram.GetChatId();
-      g_hub.Init(ChartID(), botUsername, connTarget, connected);
+      g_hub.Init(ChartID(), botUsername, connTarget, connected, InpRemoteHudCorner, InpRemoteHudX, InpRemoteHudY);
       Print("[TeleSnap Pro] ⚡ Command Center & Multi-Chart Hub Activated!");
    }
    else
@@ -190,6 +208,7 @@ int OnInit()
 void OnDeinit(const int reason)
 {
    EventKillTimer();
+   ArrayResize(g_signalQueue, 0);
    if(InpEnableCommandCenter)
       g_hub.Destroy();
    g_ui.Destroy();
@@ -305,7 +324,18 @@ void OnTimer()
       }
    }
 
-   // 3. Reset button states after 3 seconds
+   // 3. Process Anti-Spam queued signals (paced at 400ms spacing to prevent Telegram 429)
+   if(ArraySize(g_signalQueue) > 0 && (GetTickCount() - g_lastDispatchTick >= 400))
+   {
+      QueuedSignalItem item = g_signalQueue[0];
+      for(int q = 0; q < ArraySize(g_signalQueue) - 1; q++)
+         g_signalQueue[q] = g_signalQueue[q + 1];
+      ArrayResize(g_signalQueue, ArraySize(g_signalQueue) - 1);
+
+      ExecuteSnapAndSend(item.targetChartId, item.triggerSource, item.userNote, item.signal);
+   }
+
+   // 4. Reset button states after 3 seconds
    if(g_needsReset && TimeCurrent() - g_lastResetTime >= 3)
    {
       if(InpEnableCommandCenter)
@@ -346,6 +376,20 @@ void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, co
    uint startTime = GetTickCount();
    bool isAutoEvent = (triggerSource != "MANUAL_SNAP" && triggerSource != "MANUAL_NOTE_SNAP" && 
                        triggerSource != "REMOTE_SNAP" && triggerSource != "REMOTE_NOTE_SNAP");
+
+   // Anti-Spam Queue: If an auto-event occurs < 400ms after last dispatch, queue it to prevent Telegram 429
+   if(isAutoEvent && (GetTickCount() - g_lastDispatchTick < 400))
+   {
+      int qIdx = ArraySize(g_signalQueue);
+      ArrayResize(g_signalQueue, qIdx + 1);
+      g_signalQueue[qIdx].targetChartId = targetChartId;
+      g_signalQueue[qIdx].triggerSource = triggerSource;
+      g_signalQueue[qIdx].userNote = userNote;
+      g_signalQueue[qIdx].signal = preloadedSignal;
+      PrintFormat("[TeleSnap Pro] ⏱️ Queued %s signal for %s (Anti-Spam pacing, queue size: %d)", 
+                  triggerSource, (StringLen(preloadedSignal.symbol) > 0 ? preloadedSignal.symbol : "Symbol"), qIdx + 1);
+      return;
+   }
 
    bool hasDedicatedChart = (targetChartId > 0 && (!InpEnableCommandCenter || targetChartId != ChartID()));
    long activeTarget = hasDedicatedChart ? targetChartId : ChartID();
@@ -423,6 +467,7 @@ void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, co
          if(InpEnableCommandCenter)
             g_hub.AddLog(signal.symbol, "Text Dispatch Failed", elapsedMs, false);
       }
+      g_lastDispatchTick = GetTickCount();
       return;
    }
 
@@ -459,6 +504,7 @@ void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, co
    string errorMsg = "";
    bool success = g_telegram.SendPhoto(photoBytes, caption, errorMsg);
    uint elapsedMs = GetTickCount() - startTime;
+   g_lastDispatchTick = GetTickCount();
 
    if(success)
    {

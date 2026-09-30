@@ -65,6 +65,7 @@ struct TradeSignalInfo
    double            spreadPips;
    string            currency;        // USD, EUR, GBP, KES, etc.
    datetime          signalTime;
+   int               posCount;        // Number of open positions in basket (for multi-position netting)
    ulong             ticket;
    string            customComment;   // Custom message from on-chart edit box
 };

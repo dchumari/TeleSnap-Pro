@@ -19,6 +19,7 @@ private:
    string            m_chatId;
    string            m_botUsername;
    int               m_timeout;
+   long              m_messageThreadId;
 
    //--- Helper to append string to uchar array
    void AppendString(uchar &data[], const string text)
@@ -69,7 +70,7 @@ private:
    }
 
 public:
-   CTelegramClient() : m_timeout(10000), m_botUsername("") {}
+   CTelegramClient() : m_timeout(10000), m_botUsername(""), m_messageThreadId(0) {}
    ~CTelegramClient() {}
 
    //--- Escape special HTML characters to prevent Telegram parse errors
@@ -106,7 +107,7 @@ public:
       return raw;
    }
 
-   void Init(const string token, const string chatId, const int timeoutMs = 10000)
+   void Init(const string token, const string chatId, const int timeoutMs = 10000, const long messageThreadId = 0)
    {
       m_botToken = token;
       StringTrimLeft(m_botToken);
@@ -114,10 +115,12 @@ public:
 
       m_chatId = SanitizeChatId(chatId);
       m_timeout = timeoutMs;
+      m_messageThreadId = messageThreadId;
    }
 
    string GetBotUsername() const { return m_botUsername; }
    string GetChatId() const { return m_chatId; }
+   long   GetMessageThreadId() const { return m_messageThreadId; }
 
    //--- Diagnostic Test: Verify Bot Token & Chat ID
    bool TestConnection(string &outBotUsername, string &outChatTitle, string &outErrorDetails)
@@ -243,6 +246,14 @@ public:
       AppendString(body, "Content-Disposition: form-data; name=\"chat_id\"\r\n\r\n");
       AppendString(body, m_chatId + "\r\n");
 
+      // Optional message_thread_id (Telegram Forum Topics)
+      if(m_messageThreadId > 0)
+      {
+         AppendString(body, "--" + boundary + "\r\n");
+         AppendString(body, "Content-Disposition: form-data; name=\"message_thread_id\"\r\n\r\n");
+         AppendString(body, IntegerToString(m_messageThreadId) + "\r\n");
+      }
+
       // 2. parse_mode field
       AppendString(body, "--" + boundary + "\r\n");
       AppendString(body, "Content-Disposition: form-data; name=\"parse_mode\"\r\n\r\n");
@@ -270,6 +281,15 @@ public:
       string resultHeaders;
       ResetLastError();
       int res = WebRequest("POST", url, headers, m_timeout, body, resultData, resultHeaders);
+
+      // Automatic 1-retry on network drop or server gateway error (wait 300ms)
+      if(res != 200 && res != 400 && res != 401 && res != 403 && res != 404)
+      {
+         Sleep(300);
+         ResetLastError();
+         ArrayResize(resultData, 0);
+         res = WebRequest("POST", url, headers, m_timeout, body, resultData, resultHeaders);
+      }
 
       if(res == 200)
       {
@@ -331,6 +351,14 @@ public:
       AppendString(body, "Content-Disposition: form-data; name=\"chat_id\"\r\n\r\n");
       AppendString(body, m_chatId + "\r\n");
 
+      // Optional message_thread_id (Telegram Forum Topics)
+      if(m_messageThreadId > 0)
+      {
+         AppendString(body, "--" + boundary + "\r\n");
+         AppendString(body, "Content-Disposition: form-data; name=\"message_thread_id\"\r\n\r\n");
+         AppendString(body, IntegerToString(m_messageThreadId) + "\r\n");
+      }
+
       // 2. parse_mode field
       AppendString(body, "--" + boundary + "\r\n");
       AppendString(body, "Content-Disposition: form-data; name=\"parse_mode\"\r\n\r\n");
@@ -348,6 +376,15 @@ public:
       string resultHeaders;
       ResetLastError();
       int res = WebRequest("POST", url, headers, m_timeout, body, resultData, resultHeaders);
+
+      // Automatic 1-retry on network drop or server gateway error (wait 300ms)
+      if(res != 200 && res != 400 && res != 401 && res != 403 && res != 404)
+      {
+         Sleep(300);
+         ResetLastError();
+         ArrayResize(resultData, 0);
+         res = WebRequest("POST", url, headers, m_timeout, body, resultData, resultHeaders);
+      }
 
       if(res == 200)
       {
