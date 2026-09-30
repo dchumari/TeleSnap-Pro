@@ -10,7 +10,9 @@
 #include "Config.mqh"
 
 //+------------------------------------------------------------------+
-//| Settings Persistence Engine (Strict Opt-In Privacy Control)       |
+//| Local PC Settings Persistence Engine (FILE_COMMON Storage)       |
+//| Stores Bot Token & Chat ID locally on PC across charts & sessions|
+//| NOTE: Stored strictly in local AppData - NEVER pushed to Git     |
 //+------------------------------------------------------------------+
 class CTeleSnapStorage
 {
@@ -18,60 +20,61 @@ private:
    string            m_filename;
 
 public:
-   CTeleSnapStorage() : m_filename("TeleSnap/global_settings.ini") {}
+   CTeleSnapStorage() : m_filename("TeleSnap/local_config.ini") {}
    ~CTeleSnapStorage() {}
 
-   //--- Securely wipe any saved settings file from disk
-   void WipeSavedSettings()
+   //--- Securely wipe local configuration from disk
+   bool WipeCredentials()
    {
       if(FileIsExist(m_filename, FILE_COMMON))
       {
          FileDelete(m_filename, FILE_COMMON);
-         Print("[TeleSnap Privacy] 🔒 Wiped all saved credential files from disk.");
+         Print("[TeleSnap Storage] 🔒 Local credentials file removed from disk.");
+         return true;
       }
+      return false;
    }
 
-   //--- Save settings to common terminal storage (Only called if user explicitly allows)
-   bool SaveSettings(const string botToken,
-                     const string chatId,
-                     const string channelTag,
-                     const string inviteLink,
-                     const int triggerMode,
-                     const int resolution,
-                     const int captionStyle)
+   //--- Save credentials to local PC common storage
+   bool SaveCredentials(const string botToken,
+                        const string chatId,
+                        const string channelTag = "",
+                        const string inviteLink = "")
    {
-      int handle = FileOpen(m_filename, FILE_WRITE | FILE_TXT | FILE_COMMON);
-      if(handle == INVALID_HANDLE)
+      if(StringLen(botToken) == 0 || StringLen(chatId) == 0)
          return false;
 
-      FileWriteString(handle, "[TeleSnap_Config]\r\n");
+      int handle = FileOpen(m_filename, FILE_WRITE | FILE_TXT | FILE_COMMON);
+      if(handle == INVALID_HANDLE)
+      {
+         PrintFormat("[TeleSnap Storage] Failed to open local_config.ini for writing. Error: %d", GetLastError());
+         return false;
+      }
+
+      FileWriteString(handle, "[TeleSnap_Local_Config]\r\n");
       FileWriteString(handle, "bot_token=" + botToken + "\r\n");
       FileWriteString(handle, "chat_id=" + chatId + "\r\n");
       FileWriteString(handle, "channel_tag=" + channelTag + "\r\n");
       FileWriteString(handle, "invite_link=" + inviteLink + "\r\n");
-      FileWriteString(handle, "trigger_mode=" + IntegerToString(triggerMode) + "\r\n");
-      FileWriteString(handle, "resolution=" + IntegerToString(resolution) + "\r\n");
-      FileWriteString(handle, "caption_style=" + IntegerToString(captionStyle) + "\r\n");
 
       FileClose(handle);
+      Print("[TeleSnap Storage] 💾 Saved Bot Token & Chat ID to local PC storage (FILE_COMMON).");
       return true;
    }
 
-   bool HasSettings()
+   //--- Check if saved configuration exists
+   bool HasCredentials()
    {
       return FileIsExist(m_filename, FILE_COMMON);
    }
 
-   //--- Load settings from common terminal storage
-   bool LoadSettings(string &outBotToken,
-                     string &outChatId,
-                     string &outChannelTag,
-                     string &outInviteLink,
-                     int &outTriggerMode,
-                     int &outResolution,
-                     int &outCaptionStyle)
+   //--- Load credentials from local PC common storage
+   bool LoadCredentials(string &outBotToken,
+                        string &outChatId,
+                        string &outChannelTag,
+                        string &outInviteLink)
    {
-      if(!HasSettings())
+      if(!HasCredentials())
          return false;
 
       int handle = FileOpen(m_filename, FILE_READ | FILE_TXT | FILE_COMMON);
@@ -100,14 +103,8 @@ public:
                outChatId = val;
             else if(key == "channel_tag" && StringLen(val) > 0)
                outChannelTag = val;
-            else if(key == "invite_link")
+            else if(key == "invite_link" && StringLen(val) > 0)
                outInviteLink = val;
-            else if(key == "trigger_mode")
-               outTriggerMode = (int)StringToInteger(val);
-            else if(key == "resolution")
-               outResolution = (int)StringToInteger(val);
-            else if(key == "caption_style")
-               outCaptionStyle = (int)StringToInteger(val);
          }
       }
 

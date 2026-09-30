@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "Copyright 2026, Derrick Chumari."
 #property link        "https://github.com/dchumari/TeleSnap-Pro"
-#property version     "1.21"
+#property version     "1.22"
 #property description "⚡ TeleSnap Pro: Ultra-Fast Chart Snapper & Telegram Signal Dispatcher"
 #property description "Snap high-resolution watermarked charts and send formatted signals to Telegram in under 300ms."
 #property strict
@@ -23,9 +23,9 @@
 //| Input Parameters                                                 |
 //+------------------------------------------------------------------+
 input group "=== 🤖 Telegram Bot Configuration ==="
-input string                 InpBotToken       = "";                      // Bot API Token (from @BotFather)
-input string                 InpChatId         = "";                      // Channel/Group Chat ID (e.g. @MyChannel or -100xxx)
-input bool                   InpSaveCredentials = false;                  // Save IDs to local disk (Keep FALSE for pure memory privacy)
+input string                 InpBotToken       = "";                      // Bot API Token (Leave blank to auto-load saved ID)
+input string                 InpChatId         = "";                      // Channel/Group Chat ID (Leave blank to auto-load saved ID)
+input bool                   InpResetSavedIds  = false;                   // Set to TRUE to wipe saved IDs from this computer
 input bool                   InpSetDefaultTpl  = false;                   // Save as MT5 Default Template (Auto-opens on all charts)
 input int                    InpTimeoutMs      = 8000;                    // Network Timeout (milliseconds)
 
@@ -53,7 +53,7 @@ CWatermarkEngine  g_watermark;
 CTeleSnapUI       g_ui;
 CTradeMonitor     g_monitor;
 
-//--- Active state & credentials (Kept purely in memory by default)
+//--- Active state & credentials
 string            g_activeBotToken = "";
 string            g_activeChatId   = "";
 string            g_activeChannel  = "";
@@ -71,13 +71,20 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote = "");
 int OnInit()
 {
    Print("=================================================");
-   Print("⚡ Initializing TeleSnap Pro v1.21");
+   Print("⚡ Initializing TeleSnap Pro v1.22");
    Print("=================================================");
 
    // 1. Pro edition: Custom watermarking enabled
    g_watermark.SetLiteMode(false);
 
-   // 2. Resolve Credentials (In-memory by default)
+   // 2. Wipe credentials if user requested
+   if(InpResetSavedIds)
+   {
+      g_storage.WipeCredentials();
+      Print("[TeleSnap Pro] 🔒 Wiped all saved IDs from this computer.");
+   }
+
+   // 3. Resolve Credentials (Input vs Auto-Loaded Local Storage)
    g_activeBotToken = InpBotToken;
    g_activeChatId   = InpChatId;
    g_activeChannel  = InpChannelTag;
@@ -88,43 +95,43 @@ int OnInit()
    StringTrimLeft(g_activeChatId);
    StringTrimRight(g_activeChatId);
 
-   // Privacy handling: Only load or save if user explicitly opted in
-   if(InpSaveCredentials)
+   // If user provided IDs in the inputs dialog, save them locally for all other charts/windows
+   if(StringLen(g_activeBotToken) > 0 && StringLen(g_activeChatId) > 0)
    {
-      if(StringLen(g_activeBotToken) == 0 || StringLen(g_activeChatId) == 0)
+      g_storage.SaveCredentials(g_activeBotToken, g_activeChatId, g_activeChannel, g_activeInvite);
+      Print("[TeleSnap Pro] 💾 Saved Bot Token and Chat ID locally. All other charts will auto-load them!");
+   }
+   else
+   {
+      // Inputs are blank -> Automatically load saved credentials from local PC storage!
+      string savedToken = "", savedChat = "", savedTag = "", savedLink = "";
+      if(g_storage.LoadCredentials(savedToken, savedChat, savedTag, savedLink))
       {
-         string loadedToken = "", loadedChat = "", loadedTag = "", loadedLink = "";
-         int loadedTrig = 0, loadedRes = 0, loadedStyle = 0;
-         if(g_storage.LoadSettings(loadedToken, loadedChat, loadedTag, loadedLink, loadedTrig, loadedRes, loadedStyle))
-         {
-            g_activeBotToken = loadedToken;
-            g_activeChatId = loadedChat;
-            if(StringLen(loadedTag) > 0) g_activeChannel = loadedTag;
-            if(StringLen(loadedLink) > 0) g_activeInvite = loadedLink;
-            PrintFormat("[TeleSnap Pro] Auto-loaded credentials from disk. Target: %s", g_activeChatId);
-         }
-      }
-      else
-      {
-         g_storage.SaveSettings(g_activeBotToken, g_activeChatId, g_activeChannel, g_activeInvite,
-                                (int)InpTriggerMode, (int)InpResolution, (int)InpCaptionStyle);
+         g_activeBotToken = savedToken;
+         g_activeChatId   = savedChat;
+         if(StringLen(savedTag) > 0 && (StringLen(InpChannelTag) == 0 || InpChannelTag == "@MyVIPSignals"))
+            g_activeChannel = savedTag;
+         if(StringLen(savedLink) > 0 && (StringLen(InpInviteLink) == 0 || InpInviteLink == "https://t.me/"))
+            g_activeInvite = savedLink;
+
+         PrintFormat("[TeleSnap Pro] ✅ Auto-loaded credentials from local storage! Target: %s", g_activeChatId);
       }
    }
 
-   // 3. Initialize Telegram Client & Branding
+   // 4. Initialize Telegram Client & Branding
    g_telegram.Init(g_activeBotToken, g_activeChatId, InpTimeoutMs);
    g_watermark.SetBranding(g_activeChannel, g_activeInvite);
 
-   // 4. Initialize Floating Control Panel & Note Box
+   // 5. Initialize Floating Control Panel & Note Box
    if(!g_ui.Create(0, InpHudX, InpHudY, InpHotkeyKey))
    {
       Print("[TeleSnap Pro] Warning: Could not create on-chart HUD controls.");
    }
 
-   // 5. Initialize Trade Monitor
+   // 6. Initialize Trade Monitor
    g_monitor.Init(_Symbol, (ENUM_TIMEFRAMES)_Period);
 
-   // 6. Preflight Connection Diagnostic
+   // 7. Preflight Connection Diagnostic
    string botUsername = "", chatTitle = "", errorDetails = "";
    bool connected = g_telegram.TestConnection(botUsername, chatTitle, errorDetails);
 
@@ -174,24 +181,24 @@ void OnChartEvent(const int id,
 {
    int trigger = g_ui.CheckTrigger(id, lparam, dparam, sparam);
 
-   if(trigger == 1) // Quick Snap [F12] (Sends whether note exists or not)
+   if(trigger == 1) // Quick Snap [F12]
    {
       string userNote = g_ui.GetUserNote();
       ExecuteSnapAndSend("MANUAL_SNAP", userNote);
    }
-   else if(trigger == 2) // Send With Note (MUST have a note, otherwise highlights box)
+   else if(trigger == 2) // Send With Note
    {
       string userNote = g_ui.GetUserNote();
       if(StringLen(userNote) == 0)
       {
-         // Highlight the text section and DO NOT send
+         // Highlight note box and DO NOT send
          g_ui.HighlightNoteRequired();
          Print("[TeleSnap Pro] ⚠️ 'SEND + NOTE' clicked without a note. Highlighted note box.");
          return;
       }
 
       ExecuteSnapAndSend("MANUAL_NOTE_SNAP", userNote);
-      g_ui.ResetNoteBox(true); // Clear note box for next signal
+      g_ui.ResetNoteBox(true);
    }
 }
 
@@ -280,7 +287,6 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote, const
       }
    }
 
-   // Attach custom trader commentary if provided
    if(StringLen(userNote) > 0)
    {
       signal.customComment = userNote;

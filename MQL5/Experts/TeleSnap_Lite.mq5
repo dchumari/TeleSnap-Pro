@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "Copyright 2026, Derrick Chumari."
 #property link        "https://github.com/dchumari/TeleSnap-Pro"
-#property version     "1.21"
+#property version     "1.22"
 #property description "⚡ TeleSnap Lite: Free Chart Snapper for Telegram"
 #property description "Free Edition with viral watermarking. Snap and send charts to Telegram with one click."
 #property strict
@@ -23,9 +23,9 @@
 //| Input Parameters (Lite Edition: Watermark is Locked)             |
 //+------------------------------------------------------------------+
 input group "=== 🤖 Telegram Bot Configuration ==="
-input string                 InpBotToken       = "";                      // Bot API Token (from @BotFather)
-input string                 InpChatId         = "";                      // Channel/Group Chat ID (e.g. @MyChannel or -100xxx)
-input bool                   InpSaveCredentials = false;                  // Save IDs to local disk (Keep FALSE for pure memory privacy)
+input string                 InpBotToken       = "";                      // Bot API Token (Leave blank to auto-load saved ID)
+input string                 InpChatId         = "";                      // Channel/Group Chat ID (Leave blank to auto-load saved ID)
+input bool                   InpResetSavedIds  = false;                   // Set to TRUE to wipe saved IDs from this computer
 input bool                   InpSetDefaultTpl  = false;                   // Save as MT5 Default Template (Auto-opens on all charts)
 input int                    InpTimeoutMs      = 8000;                    // Network Timeout (milliseconds)
 
@@ -51,7 +51,7 @@ CWatermarkEngine  g_watermark;
 CTeleSnapUI       g_ui;
 CTradeMonitor     g_monitor;
 
-//--- Active state & credentials (In-memory by default)
+//--- Active state & credentials
 string            g_activeBotToken = "";
 string            g_activeChatId   = "";
 datetime          g_lastResetTime  = 0;
@@ -67,13 +67,20 @@ void ExecuteSnapAndSend(const string triggerSource, const string userNote = "");
 int OnInit()
 {
    Print("=================================================");
-   Print("⚡ Initializing TeleSnap Lite v1.21 (Free MQL5 Edition)");
+   Print("⚡ Initializing TeleSnap Lite v1.22 (Free MQL5 Edition)");
    Print("=================================================");
 
    // 1. Strictly enforce LITE MODE (Watermark is locked)
    g_watermark.SetLiteMode(true);
 
-   // 2. Resolve Credentials
+   // 2. Wipe credentials if user requested
+   if(InpResetSavedIds)
+   {
+      g_storage.WipeCredentials();
+      Print("[TeleSnap Lite] 🔒 Wiped all saved IDs from this computer.");
+   }
+
+   // 3. Resolve Credentials (Input vs Auto-Loaded Local Storage)
    g_activeBotToken = InpBotToken;
    g_activeChatId   = InpChatId;
 
@@ -82,39 +89,37 @@ int OnInit()
    StringTrimLeft(g_activeChatId);
    StringTrimRight(g_activeChatId);
 
-   if(InpSaveCredentials)
+   // If user provided IDs in inputs, save them locally for all windows
+   if(StringLen(g_activeBotToken) > 0 && StringLen(g_activeChatId) > 0)
    {
-      if(StringLen(g_activeBotToken) == 0 || StringLen(g_activeChatId) == 0)
+      g_storage.SaveCredentials(g_activeBotToken, g_activeChatId, "Powered by TeleSnap Pro", "https://www.mql5.com");
+      Print("[TeleSnap Lite] 💾 Saved Bot Token and Chat ID locally. All other charts will auto-load them!");
+   }
+   else
+   {
+      // Inputs are blank -> Automatically load saved credentials from local PC storage!
+      string savedToken = "", savedChat = "", savedTag = "", savedLink = "";
+      if(g_storage.LoadCredentials(savedToken, savedChat, savedTag, savedLink))
       {
-         string loadedToken = "", loadedChat = "", loadedTag = "", loadedLink = "";
-         int loadedTrig = 0, loadedRes = 0, loadedStyle = 0;
-         if(g_storage.LoadSettings(loadedToken, loadedChat, loadedTag, loadedLink, loadedTrig, loadedRes, loadedStyle))
-         {
-            g_activeBotToken = loadedToken;
-            g_activeChatId   = loadedChat;
-            PrintFormat("[TeleSnap Lite] Auto-loaded credentials from disk. Target: %s", g_activeChatId);
-         }
-      }
-      else
-      {
-         g_storage.SaveSettings(g_activeBotToken, g_activeChatId, "Powered by TeleSnap Pro", "https://www.mql5.com",
-                                (int)InpTriggerMode, (int)InpResolution, (int)InpCaptionStyle);
+         g_activeBotToken = savedToken;
+         g_activeChatId   = savedChat;
+         PrintFormat("[TeleSnap Lite] ✅ Auto-loaded credentials from local storage! Target: %s", g_activeChatId);
       }
    }
 
-   // 3. Initialize Telegram client
+   // 4. Initialize Telegram client
    g_telegram.Init(g_activeBotToken, g_activeChatId, InpTimeoutMs);
 
-   // 4. Initialize Floating HUD Button & Note Box
+   // 5. Initialize Floating HUD Button & Note Box
    if(!g_ui.Create(0, InpHudX, InpHudY, InpHotkeyKey))
    {
       Print("[TeleSnap Lite] Warning: Could not create on-chart HUD controls.");
    }
 
-   // 5. Initialize Trade Monitor
+   // 6. Initialize Trade Monitor
    g_monitor.Init(_Symbol, (ENUM_TIMEFRAMES)_Period);
 
-   // 6. Preflight Connection Diagnostic Test
+   // 7. Preflight Connection Diagnostic Test
    string botUsername = "", chatTitle = "", errorDetails = "";
    bool connected = g_telegram.TestConnection(botUsername, chatTitle, errorDetails);
 
@@ -174,14 +179,14 @@ void OnChartEvent(const int id,
       string userNote = g_ui.GetUserNote();
       if(StringLen(userNote) == 0)
       {
-         // Highlight the text section and DO NOT send
+         // Highlight note box and DO NOT send
          g_ui.HighlightNoteRequired();
          Print("[TeleSnap Lite] ⚠️ 'SEND + NOTE' clicked without a note. Highlighted note box.");
          return;
       }
 
       ExecuteSnapAndSend("MANUAL_NOTE_SNAP", userNote);
-      g_ui.ResetNoteBox(true); // Clear note box for next signal
+      g_ui.ResetNoteBox(true);
    }
 }
 
