@@ -127,7 +127,8 @@ int OnInit()
    {
       string connTarget = (StringLen(chatTitle) > 0) ? chatTitle : g_telegram.GetChatId();
       g_hub.Init(ChartID(), botUsername, connTarget, connected);
-      Print("[TeleSnap Lite] ⚡ Command Center & Multi-Chart Hub Activated!");
+      ChartSaveTemplate(0, "TeleSnap_Hub.tpl");
+      Print("[TeleSnap Lite] ⚡ Command Center & Multi-Chart Hub Activated! Saved TeleSnap_Hub.tpl template.");
    }
    else
    {
@@ -200,6 +201,10 @@ void OnChartEvent(const int id,
       {
          if(g_hub.HandleDashboardClick(sparam))
             return;
+      }
+      else if(id == CHARTEVENT_CHART_CHANGE)
+      {
+         g_hub.OnChartResize();
       }
    }
 

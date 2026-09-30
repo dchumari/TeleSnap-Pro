@@ -51,6 +51,7 @@ private:
    bool              m_isConnected;
    datetime          m_lastChartScan;
    int               m_maxLogEntries;
+   int               m_lastChartWidth;
 
    //--- Prefix constants for objects
    string            PrefixDash() const   { return "TeleSnap_Dash_"; }
@@ -62,7 +63,8 @@ public:
                    m_chatTarget(""),
                    m_isConnected(false),
                    m_lastChartScan(0),
-                   m_maxLogEntries(8)
+                   m_maxLogEntries(8),
+                   m_lastChartWidth(0)
    {
       ArrayResize(m_charts, 0);
       ArrayResize(m_activityLog, 0);
@@ -102,10 +104,36 @@ public:
       ChartSetInteger(m_hubChartId, CHART_SHOW_OHLC, false);
       ChartSetInteger(m_hubChartId, CHART_MODE, CHART_LINE);
       ChartSetInteger(m_hubChartId, CHART_COLOR_BACKGROUND, C'16,21,30'); // Premium dark slate
-      ChartSetInteger(m_hubChartId, CHART_COLOR_FOREGROUND, clrWhite);
+      ChartSetInteger(m_hubChartId, CHART_COLOR_FOREGROUND, C'16,21,30');
       ChartSetInteger(m_hubChartId, CHART_COLOR_CHART_LINE, C'16,21,30'); // Blend chart line into background
+      ChartSetInteger(m_hubChartId, CHART_COLOR_CANDLE_BULL, C'16,21,30');
+      ChartSetInteger(m_hubChartId, CHART_COLOR_CANDLE_BEAR, C'16,21,30');
+      ChartSetInteger(m_hubChartId, CHART_COLOR_CHART_UP, C'16,21,30');
+      ChartSetInteger(m_hubChartId, CHART_COLOR_CHART_DOWN, C'16,21,30');
+      ChartSetInteger(m_hubChartId, CHART_COLOR_VOLUME, C'16,21,30');
       ChartSetInteger(m_hubChartId, CHART_EVENT_MOUSE_MOVE, true);
+
+      // Completely wipe all trade history arrows, order levels, and market lines
+      ChartSetInteger(m_hubChartId, CHART_SHOW_TRADE_LEVELS, false);
+      ChartSetInteger(m_hubChartId, CHART_SHOW_TRADE_HISTORY, false);
+      ChartSetInteger(m_hubChartId, CHART_SHOW_BID_LINE, false);
+      ChartSetInteger(m_hubChartId, CHART_SHOW_ASK_LINE, false);
+      ChartSetInteger(m_hubChartId, CHART_SHOW_LAST_LINE, false);
+      ChartSetInteger(m_hubChartId, CHART_SHOW_ONE_CLICK, false);
+      ChartSetInteger(m_hubChartId, CHART_SHOW_OBJECT_DESCR, false);
+
       ChartRedraw(m_hubChartId);
+   }
+
+   //--- Handle window resize dynamically
+   void OnChartResize()
+   {
+      int currentW = (int)ChartGetInteger(m_hubChartId, CHART_WIDTH_IN_PIXELS);
+      if(MathAbs(currentW - m_lastChartWidth) > 30)
+      {
+         m_lastChartWidth = currentW;
+         RenderDashboard();
+      }
    }
 
    //--- Refresh open charts list across the MT5 terminal
@@ -508,9 +536,17 @@ public:
       // Clean previous dashboard objects on host chart
       ObjectsDeleteAll(m_hubChartId, PrefixDash());
 
+      int chartW = (int)ChartGetInteger(m_hubChartId, CHART_WIDTH_IN_PIXELS);
+      m_lastChartWidth = chartW;
+
       int startX = 30;
       int startY = 30;
       int cardWidth = 720;
+      if(chartW > 780)
+      {
+         cardWidth = chartW - 60;
+         if(cardWidth > 1250) cardWidth = 1250;
+      }
 
       // 1. Header Banner Card
       DrawHeaderCard(startX, startY, cardWidth);
