@@ -19,6 +19,7 @@ private:
    string            m_vipInviteLink;
    string            m_disclaimer;
    string            m_watermarkObjName;
+   bool              m_isLiteMode;
 
    //--- Calculate pip size for symbol
    double GetPipSize(const string symbol)
@@ -34,7 +35,8 @@ public:
    CWatermarkEngine() : m_channelTag("@TeleSnapPro"), 
                         m_vipInviteLink(""), 
                         m_disclaimer("⚠️ Risk Warning: Trading Forex/Crypto carries high risk."),
-                        m_watermarkObjName("TeleSnap_Watermark_Overlay")
+                        m_watermarkObjName("TeleSnap_Watermark_Overlay"),
+                        m_isLiteMode(false)
    {}
 
    ~CWatermarkEngine()
@@ -42,12 +44,41 @@ public:
       RemoveOnChartWatermark(0);
    }
 
+   //--- Configure Edition Mode (Lite vs Pro)
+   void SetLiteMode(const bool isLite)
+   {
+      m_isLiteMode = isLite;
+      if(m_isLiteMode)
+      {
+         // Strictly hardcoded in Lite mode - cannot be changed by user inputs
+         m_channelTag = "Powered by TeleSnap Pro - Get on MQL5";
+         m_vipInviteLink = "https://www.mql5.com";
+      }
+   }
+
+   bool IsLiteMode() const { return m_isLiteMode; }
+
    void SetBranding(const string channelTag, const string inviteLink = "", const string disclaimer = "")
    {
-      m_channelTag = channelTag;
-      m_vipInviteLink = inviteLink;
-      if(StringLen(disclaimer) > 0) m_disclaimer = disclaimer;
+      if(m_isLiteMode)
+      {
+         // In Lite edition, enforce fixed viral watermark
+         m_channelTag = "Powered by TeleSnap Pro - Get on MQL5";
+         m_vipInviteLink = "https://www.mql5.com";
+      }
+      else
+      {
+         // Pro edition: Full custom branding
+         if(StringLen(channelTag) > 0)
+            m_channelTag = channelTag;
+         m_vipInviteLink = inviteLink;
+      }
+
+      if(StringLen(disclaimer) > 0)
+         m_disclaimer = disclaimer;
    }
+
+   string GetChannelTag() const { return m_channelTag; }
 
    //--- Render on-chart watermark label before screenshot
    void DrawOnChartWatermark(const long chartId, const ENUM_WATERMARK_POSITION position, const color textColor = clrDimGray)
@@ -57,10 +88,14 @@ public:
       if(!ObjectCreate(chartId, m_watermarkObjName, OBJ_LABEL, 0, 0, 0))
          return;
 
-      ObjectSetString(chartId, m_watermarkObjName, OBJPROP_TEXT, m_channelTag);
+      string displayTag = m_channelTag;
+      if(m_isLiteMode)
+         displayTag = "⚡ Powered by TeleSnap Pro (Free MQL5 Edition)";
+
+      ObjectSetString(chartId, m_watermarkObjName, OBJPROP_TEXT, displayTag);
       ObjectSetString(chartId, m_watermarkObjName, OBJPROP_FONT, "Segoe UI Semibold");
-      ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_FONTSIZE, 14);
-      ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_COLOR, textColor);
+      ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_FONTSIZE, 13);
+      ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_COLOR, m_isLiteMode ? clrDodgerBlue : textColor);
       ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_SELECTABLE, false);
       ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_HIDDEN, true);
 
@@ -69,11 +104,11 @@ public:
          case POS_TOP_LEFT:
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_XDISTANCE, 30);
-            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_YDISTANCE, 40);
+            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_YDISTANCE, 70);
             break;
          case POS_TOP_RIGHT:
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
-            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_XDISTANCE, 180);
+            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_XDISTANCE, 240);
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_YDISTANCE, 40);
             break;
          case POS_BOTTOM_LEFT:
@@ -84,14 +119,14 @@ public:
          case POS_BOTTOM_RIGHT:
          default:
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_CORNER, CORNER_RIGHT_LOWER);
-            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_XDISTANCE, 200);
+            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_XDISTANCE, 260);
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_YDISTANCE, 40);
             break;
       }
       ChartRedraw(chartId);
    }
 
-   //--- Remove watermark label after screenshot if temporary
+   //--- Remove watermark label after screenshot
    void RemoveOnChartWatermark(const long chartId)
    {
       ObjectDelete(chartId, m_watermarkObjName);
@@ -141,11 +176,22 @@ public:
       }
 
       caption += "━━━━━━━━━━━━━━━━━━━━\n";
-      caption += "📢 <b>Channel:</b> " + m_channelTag + "\n";
 
-      if(StringLen(m_vipInviteLink) > 0)
+      if(m_isLiteMode)
       {
-         caption += "🔗 <a href=\"" + m_vipInviteLink + "\">Join VIP Community</a>\n";
+         // Strictly hardcoded viral branding in Lite edition
+         caption += "📢 <b>Powered by TeleSnap Pro</b>\n";
+         caption += "⚡ <i>Get TeleSnap on MQL5 Market: <a href=\"https://www.mql5.com\">mql5.com</a></i>\n";
+      }
+      else
+      {
+         // Pro edition custom branding
+         caption += "📢 <b>Channel:</b> " + m_channelTag + "\n";
+         if(StringLen(m_vipInviteLink) > 0)
+         {
+            caption += "🔗 <a href=\"" + m_vipInviteLink + "\">Join VIP Community</a>\n";
+         }
+         caption += "⚡ <i>Powered by TeleSnap Pro</i>\n";
       }
 
       if(style == STYLE_MARKETING)
@@ -153,7 +199,6 @@ public:
          caption += "\n<i>" + m_disclaimer + "</i>\n";
       }
 
-      caption += "⚡ <i>Powered by TeleSnap Pro</i>";
       return caption;
    }
 };

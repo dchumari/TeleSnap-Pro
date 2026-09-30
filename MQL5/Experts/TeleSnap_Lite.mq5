@@ -1,13 +1,13 @@
 //+------------------------------------------------------------------+
-//|                                                 TeleSnap_Pro.mq5 |
+//|                                                TeleSnap_Lite.mq5 |
 //|                                Copyright 2026, Derrick Chumari.  |
 //|                         https://github.com/dchumari/TeleSnap-Pro |
 //+------------------------------------------------------------------+
 #property copyright   "Copyright 2026, Derrick Chumari."
 #property link        "https://github.com/dchumari/TeleSnap-Pro"
 #property version     "1.10"
-#property description "⚡ TeleSnap Pro: Ultra-Fast Chart Snapper & Telegram Signal Dispatcher"
-#property description "Snap high-resolution watermarked charts and send formatted signals to Telegram in under 300ms."
+#property description "⚡ TeleSnap Lite: Free Chart Snapper for Telegram"
+#property description "Free Edition with viral watermarking. Snap and send charts to Telegram with one click."
 #property strict
 
 //--- Include core modules
@@ -20,7 +20,7 @@
 #include <TeleSnap/TradeMonitor.mqh>
 
 //+------------------------------------------------------------------+
-//| Input Parameters                                                 |
+//| Input Parameters (Lite Edition: Watermark is Locked)             |
 //+------------------------------------------------------------------+
 input group "=== 🤖 Telegram Bot Configuration ==="
 input string                 InpBotToken       = "";                      // Bot API Token (Leave blank to use Saved Global ID)
@@ -29,16 +29,14 @@ input bool                   InpSaveAsGlobal   = true;                    // Sav
 input bool                   InpSetDefaultTpl  = false;                   // Save as MT5 Default Template (Auto-opens on all charts)
 input int                    InpTimeoutMs      = 8000;                    // Network Timeout (milliseconds)
 
-input group "=== 🏷️ Branding & Watermark (Pro Edition) ==="
-input string                 InpChannelTag     = "@MyVIPSignals";         // Telegram Channel Handle Watermark
-input string                 InpInviteLink     = "https://t.me/";         // VIP Invite Link (Shown in Caption)
+input group "=== 🏷️ Branding (LOCKED IN FREE LITE EDITION) ==="
+// Note: In Lite Edition, watermark is fixed to "Powered by TeleSnap Pro" to promote the tool virally
 input ENUM_WATERMARK_POSITION InpWatermarkPos  = POS_BOTTOM_RIGHT;        // On-Chart Watermark Position
-input color                  InpWatermarkColor = clrDimGray;              // Watermark Text Color
 
 input group "=== 📸 Capture & Image Settings ==="
 input ENUM_IMAGE_RESOLUTION  InpResolution     = RES_HD_1280x720;         // Image Resolution Preset
-input ENUM_CAPTION_STYLE     InpCaptionStyle   = STYLE_DETAILED;          // Signal Caption Layout Style
-input ENUM_CAPTURE_TRIGGER   InpTriggerMode    = TRIGGER_AUTO_ALL_EVENTS; // Capture Trigger Mode
+input ENUM_CAPTION_STYLE     InpCaptionStyle   = STYLE_MINIMAL;           // Signal Caption Layout Style
+input ENUM_CAPTURE_TRIGGER   InpTriggerMode    = TRIGGER_BUTTON_ONLY;     // Capture Trigger Mode
 input int                    InpHotkeyKey      = 123;                     // Keyboard Hotkey (123 = F12)
 
 input group "=== 🖥️ Floating HUD Settings ==="
@@ -56,8 +54,6 @@ CTradeMonitor     g_monitor;
 //--- Active state & credentials
 string            g_activeBotToken = "";
 string            g_activeChatId   = "";
-string            g_activeChannel  = "";
-string            g_activeInvite   = "";
 int               g_activeTrigger  = 0;
 int               g_activeRes      = 0;
 int               g_activeStyle    = 0;
@@ -74,17 +70,15 @@ void ExecuteSnapAndSend(const string triggerSource);
 int OnInit()
 {
    Print("=================================================");
-   Print("⚡ Initializing TeleSnap Pro v1.10");
+   Print("⚡ Initializing TeleSnap Lite v1.10 (Free MQL5 Edition)");
    Print("=================================================");
 
-   // 1. Initialize Pro edition branding (customizable)
-   g_watermark.SetLiteMode(false);
+   // 1. Strictly enforce LITE MODE (Watermark is locked and unchangeable)
+   g_watermark.SetLiteMode(true);
 
    // 2. Resolve Credentials (Input vs Global Shared Storage)
    g_activeBotToken = InpBotToken;
    g_activeChatId   = InpChatId;
-   g_activeChannel  = InpChannelTag;
-   g_activeInvite   = InpInviteLink;
    g_activeTrigger  = (int)InpTriggerMode;
    g_activeRes      = (int)InpResolution;
    g_activeStyle    = (int)InpCaptionStyle;
@@ -94,7 +88,6 @@ int OnInit()
    StringTrimLeft(g_activeChatId);
    StringTrimRight(g_activeChatId);
 
-   // If inputs are left blank on this chart, auto-load from Global Storage
    if(StringLen(g_activeBotToken) == 0 || StringLen(g_activeChatId) == 0)
    {
       string loadedToken = "", loadedChat = "", loadedTag = "", loadedLink = "";
@@ -104,26 +97,22 @@ int OnInit()
       {
          g_activeBotToken = loadedToken;
          g_activeChatId   = loadedChat;
-         if(StringLen(loadedTag) > 0) g_activeChannel = loadedTag;
-         if(StringLen(loadedLink) > 0) g_activeInvite = loadedLink;
-         PrintFormat("[TeleSnap Pro] ✅ Auto-loaded credentials from Shared Storage! (Chat: %s)", g_activeChatId);
+         PrintFormat("[TeleSnap Lite] ✅ Auto-loaded credentials from Shared Storage! (Chat: %s)", g_activeChatId);
       }
    }
    else if(InpSaveAsGlobal)
    {
-      // Inputs were provided manually on this chart -> save globally for all other charts
-      g_storage.SaveSettings(g_activeBotToken, g_activeChatId, g_activeChannel, g_activeInvite,
+      g_storage.SaveSettings(g_activeBotToken, g_activeChatId, "Powered by TeleSnap Pro", "https://www.mql5.com",
                              g_activeTrigger, g_activeRes, g_activeStyle);
    }
 
    // 3. Initialize Telegram client
    g_telegram.Init(g_activeBotToken, g_activeChatId, InpTimeoutMs);
-   g_watermark.SetBranding(g_activeChannel, g_activeInvite);
 
    // 4. Initialize Floating HUD Button
    if(!g_ui.Create(0, InpHudX, InpHudY, InpHotkeyKey))
    {
-      Print("[TeleSnap Pro] Warning: Could not create on-chart HUD button.");
+      Print("[TeleSnap Lite] Warning: Could not create on-chart HUD button.");
    }
 
    // 5. Initialize Trade Monitor
@@ -137,21 +126,20 @@ int OnInit()
    {
       string connTarget = (StringLen(chatTitle) > 0) ? chatTitle : g_telegram.GetChatId();
       g_ui.ResetState(connTarget);
-      PrintFormat("[TeleSnap Pro] ✅ TELEGRAM CONNECTED! Bot: @%s | Target Chat: %s", botUsername, connTarget);
+      PrintFormat("[TeleSnap Lite] ✅ TELEGRAM CONNECTED! Bot: @%s | Target Chat: %s", botUsername, connTarget);
       Comment("");
    }
    else
    {
       g_ui.SetStateFailed("Not Connected");
-      PrintFormat("[TeleSnap Pro] ⚠️ TELEGRAM SETUP REQUIRED:\n%s", errorDetails);
+      PrintFormat("[TeleSnap Lite] ⚠️ TELEGRAM SETUP REQUIRED:\n%s", errorDetails);
       Comment("⚠️ TeleSnap Setup: " + errorDetails);
    }
 
-   // 7. Optional: Save as Default MT5 Template if requested
    if(InpSetDefaultTpl)
    {
       ChartSaveTemplate(0, "default.tpl");
-      Print("[TeleSnap Pro] 💾 Saved current chart as MT5 'default.tpl'. All newly opened charts will auto-load TeleSnap!");
+      Print("[TeleSnap Lite] 💾 Saved current chart as MT5 'default.tpl'.");
    }
 
    EventSetTimer(1);
@@ -167,7 +155,7 @@ void OnDeinit(const int reason)
    g_ui.Destroy();
    g_watermark.RemoveOnChartWatermark(0);
    Comment("");
-   Print("[TeleSnap Pro] Deinitialized cleanly.");
+   Print("[TeleSnap Lite] Deinitialized cleanly.");
 }
 
 //+------------------------------------------------------------------+
@@ -181,28 +169,6 @@ void OnChartEvent(const int id,
    if(g_ui.IsTriggered(id, lparam, dparam, sparam))
    {
       ExecuteSnapAndSend("MANUAL_CLICK");
-   }
-}
-
-//+------------------------------------------------------------------+
-//| Trade Transaction Event handler (Auto-Snapping)                  |
-//+------------------------------------------------------------------+
-void OnTradeTransaction(const MqlTradeTransaction &trans,
-                        const MqlTradeRequest &request,
-                        const MqlTradeResult &result)
-{
-   if(InpTriggerMode == TRIGGER_BUTTON_ONLY)
-      return;
-
-   TradeSignalInfo signal;
-   string eventReason = "";
-
-   if(g_monitor.ProcessTransaction(trans, request, result, signal, eventReason))
-   {
-      if(InpTriggerMode == TRIGGER_AUTO_ON_ENTRY && eventReason != "TRADE_OPEN")
-         return;
-
-      ExecuteSnapAndSend(eventReason, signal);
    }
 }
 
@@ -229,7 +195,7 @@ void ExecuteSnapAndSend(const string triggerSource)
 }
 
 //+------------------------------------------------------------------+
-//| Core Action: Snap Chart, Overlay Watermark & Dispatch            |
+//| Core Action: Snap Chart, Overlay Locked Watermark & Dispatch     |
 //+------------------------------------------------------------------+
 void ExecuteSnapAndSend(const string triggerSource, const TradeSignalInfo &preloadedSignal)
 {
@@ -245,13 +211,11 @@ void ExecuteSnapAndSend(const string triggerSource, const TradeSignalInfo &prelo
    }
    else
    {
-      // Build from active chart state / positions
       signal.symbol = _Symbol;
       signal.timeframe = (ENUM_TIMEFRAMES)_Period;
       signal.signalTime = TimeCurrent();
-      signal.customComment = "Manual Signal Snapshot";
+      signal.customComment = "TeleSnap Lite Snapshot";
 
-      // If an open position exists on this symbol, extract its levels
       if(PositionSelect(_Symbol))
       {
          ENUM_POSITION_TYPE pType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
@@ -271,26 +235,26 @@ void ExecuteSnapAndSend(const string triggerSource, const TradeSignalInfo &prelo
       }
    }
 
-   // 2. Draw temporary on-chart watermark
-   g_watermark.DrawOnChartWatermark(0, InpWatermarkPos, InpWatermarkColor);
+   // 2. Draw locked on-chart watermark ("Powered by TeleSnap Pro")
+   g_watermark.DrawOnChartWatermark(0, InpWatermarkPos, clrDodgerBlue);
 
    // 3. Capture high-resolution screenshot into memory buffer
    uchar photoBytes[];
    bool captured = g_capture.CaptureChartToBuffer(0, InpResolution, photoBytes);
 
-   // Clean up temporary watermark immediately
+   // Clean up temporary watermark
    g_watermark.RemoveOnChartWatermark(0);
 
    if(!captured)
    {
-      Print("[TeleSnap Pro] Capture failed. Aborting send.");
+      Print("[TeleSnap Lite] Capture failed. Aborting send.");
       g_ui.SetStateFailed("Capture Failed");
       g_lastResetTime = TimeCurrent();
       g_needsReset = true;
       return;
    }
 
-   // 4. Construct rich formatted caption
+   // 4. Construct caption with locked viral footer
    string caption = g_watermark.BuildSignalCaption(signal, InpCaptionStyle);
 
    // 5. Dispatch via native HTTPS WebRequest
@@ -300,13 +264,13 @@ void ExecuteSnapAndSend(const string triggerSource, const TradeSignalInfo &prelo
 
    if(success)
    {
-      PrintFormat("[TeleSnap Pro] ✅ Dispatched in %u ms to %s! [Trigger: %s]", elapsedMs, g_telegram.GetChatId(), triggerSource);
+      PrintFormat("[TeleSnap Lite] ✅ Dispatched in %u ms to %s! [Trigger: %s]", elapsedMs, g_telegram.GetChatId(), triggerSource);
       g_ui.SetStateSuccess(elapsedMs, g_telegram.GetChatId());
       Comment("");
    }
    else
    {
-      PrintFormat("[TeleSnap Pro] ❌ Dispatch failed: %s", errorMsg);
+      PrintFormat("[TeleSnap Lite] ❌ Dispatch failed: %s", errorMsg);
       g_ui.SetStateFailed("Send Failed");
       Comment("⚠️ TeleSnap Error: " + errorMsg);
    }
