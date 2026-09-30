@@ -10,7 +10,7 @@
 #include "Config.mqh"
 
 //+------------------------------------------------------------------+
-//| Watermarking, Caption Formatting & Risk Analytics Engine         |
+//| Watermarking, Multi-Target Calculations & Rich Signal Generator  |
 //+------------------------------------------------------------------+
 class CWatermarkEngine
 {
@@ -44,13 +44,11 @@ public:
       RemoveOnChartWatermark(0);
    }
 
-   //--- Configure Edition Mode (Lite vs Pro)
    void SetLiteMode(const bool isLite)
    {
       m_isLiteMode = isLite;
       if(m_isLiteMode)
       {
-         // Strictly hardcoded in Lite mode - cannot be changed by user inputs
          m_channelTag = "Powered by TeleSnap Pro - Get on MQL5";
          m_vipInviteLink = "https://www.mql5.com";
       }
@@ -62,13 +60,11 @@ public:
    {
       if(m_isLiteMode)
       {
-         // In Lite edition, enforce fixed viral watermark
          m_channelTag = "Powered by TeleSnap Pro - Get on MQL5";
          m_vipInviteLink = "https://www.mql5.com";
       }
       else
       {
-         // Pro edition: Full custom branding
          if(StringLen(channelTag) > 0)
             m_channelTag = channelTag;
          m_vipInviteLink = inviteLink;
@@ -104,7 +100,7 @@ public:
          case POS_TOP_LEFT:
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_XDISTANCE, 30);
-            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_YDISTANCE, 70);
+            ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_YDISTANCE, 120);
             break;
          case POS_TOP_RIGHT:
             ObjectSetInteger(chartId, m_watermarkObjName, OBJPROP_CORNER, CORNER_RIGHT_UPPER);
@@ -126,77 +122,129 @@ public:
       ChartRedraw(chartId);
    }
 
-   //--- Remove watermark label after screenshot
    void RemoveOnChartWatermark(const long chartId)
    {
       ObjectDelete(chartId, m_watermarkObjName);
       ChartRedraw(chartId);
    }
 
-   //--- Build rich HTML formatted caption for Telegram
+   //--- Build rich, ultra-informative HTML signal post
    string BuildSignalCaption(const TradeSignalInfo &info, const ENUM_CAPTION_STYLE style)
    {
       string directionEmoji = (StringFind(info.orderType, "BUY") >= 0) ? "🟢" : "🔴";
-      string tfStr = StringSubstr(EnumToString(info.timeframe), 11); // e.g. "PERIOD_M15" -> "M15"
+      string tfStr = StringSubstr(EnumToString(info.timeframe), 11);
       int digits = (int)SymbolInfoInteger(info.symbol, SYMBOL_DIGITS);
+      double pipSize = GetPipSize(info.symbol);
 
       string caption = "";
 
-      // Header
-      caption += directionEmoji + " <b>NEW SIGNAL: " + info.symbol + " (" + tfStr + ")</b>\n";
-      caption += "━━━━━━━━━━━━━━━━━━━━\n";
-      caption += "<b>Type:</b> " + info.orderType + "\n";
-      caption += "<b>Entry:</b> " + DoubleToString(info.entryPrice, digits) + "\n";
+      // 1. Header Banner
+      caption += "📊 <b>" + info.symbol + " • " + tfStr + " ANALYSIS & SIGNAL</b>\n";
+      caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
 
+      // 2. Status & Order Information
+      string statusText = "🟢 IN TRADE (RUNNING)";
+      if(info.status == "NEW_SETUP") statusText = "⚡ NEW EXECUTION";
+      else if(info.status == "TAKE_PROFIT") statusText = "🎯 TAKE PROFIT REACHED";
+      else if(info.status == "STOP_LOSS") statusText = "🛑 STOP LOSS HIT";
+      else if(info.status == "WATCHLIST") statusText = "👀 MARKET SETUP / WATCHLIST";
+
+      caption += "📍 <b>Status:</b> " + statusText + "\n";
+      caption += directionEmoji + " <b>Action:</b> <b>" + info.orderType + "</b> @ <code>" + DoubleToString(info.entryPrice, digits) + "</code>\n";
+
+      if(info.volume > 0)
+      {
+         caption += "📦 <b>Volume:</b> " + DoubleToString(info.volume, 2) + " Lots";
+         if(info.ticket > 0)
+            caption += " (Ticket #" + IntegerToString(info.ticket) + ")";
+         caption += "\n";
+      }
+
+      // 3. In-Trade Live PnL & Current Price
+      if(info.status == "IN_TRADE" || info.floatingPnL != 0)
+      {
+         string pnlPrefix = (info.floatingPnL >= 0) ? "+$" : "-$";
+         string pipsPrefix = (info.floatingPips >= 0) ? "+" : "";
+         caption += "💰 <b>Floating PnL:</b> " + pnlPrefix + DoubleToString(MathAbs(info.floatingPnL), 2) + 
+                    " (" + pipsPrefix + DoubleToString(info.floatingPips, 1) + " pips)\n";
+         caption += "🏷️ <b>Current Price:</b> <code>" + DoubleToString(info.currentPrice, digits) + "</code>\n";
+      }
+
+      caption += "─────────────────────────\n";
+
+      // 4. Stop Loss
       if(info.stopLoss > 0)
       {
-         double pipSize = GetPipSize(info.symbol);
-         double slPips = (pipSize > 0) ? MathAbs(info.entryPrice - info.stopLoss) / pipSize : 0;
-         caption += "<b>Stop Loss:</b> " + DoubleToString(info.stopLoss, digits) + 
-                    " (" + DoubleToString(slPips, 1) + " pips)\n";
-      }
-
-      if(info.takeProfit > 0)
-      {
-         double pipSize = GetPipSize(info.symbol);
-         double tpPips = (pipSize > 0) ? MathAbs(info.takeProfit - info.entryPrice) / pipSize : 0;
-         caption += "<b>Take Profit:</b> " + DoubleToString(info.takeProfit, digits) + 
-                    " (" + DoubleToString(tpPips, 1) + " pips)\n";
-
-         if(info.stopLoss > 0 && MathAbs(info.entryPrice - info.stopLoss) > 0)
-         {
-            double rr = MathAbs(info.takeProfit - info.entryPrice) / MathAbs(info.entryPrice - info.stopLoss);
-            caption += "<b>Risk : Reward:</b> 1 : " + DoubleToString(rr, 2) + "\n";
-         }
-      }
-
-      if(StringLen(info.customComment) > 0)
-      {
-         caption += "<b>Note:</b> " + info.customComment + "\n";
-      }
-
-      caption += "━━━━━━━━━━━━━━━━━━━━\n";
-
-      if(m_isLiteMode)
-      {
-         // Strictly hardcoded viral branding in Lite edition
-         caption += "📢 <b>Powered by TeleSnap Pro</b>\n";
-         caption += "⚡ <i>Get TeleSnap on MQL5 Market: <a href=\"https://www.mql5.com\">mql5.com</a></i>\n";
+         caption += "🛡️ <b>Stop Loss:</b> <code>" + DoubleToString(info.stopLoss, digits) + "</code>";
+         if(info.slPips > 0)
+            caption += " (-" + DoubleToString(info.slPips, 1) + " pips)";
+         caption += "\n";
       }
       else
       {
-         // Pro edition custom branding
+         caption += "🛡️ <b>Stop Loss:</b> <i>Not Set (Open Risk)</i>\n";
+      }
+
+      // 5. Multi-Tier Take Profit Targets
+      if(info.takeProfit > 0)
+      {
+         // If user has a final TP, calculate TP1 and TP2 milestones
+         if(info.tp1Price > 0 && info.tp1Price != info.takeProfit)
+         {
+            double tp1Pips = (pipSize > 0) ? MathAbs(info.tp1Price - info.entryPrice) / pipSize : 0;
+            caption += "🎯 <b>Take Profit 1 (1:1):</b> <code>" + DoubleToString(info.tp1Price, digits) + 
+                       "</code> (+" + DoubleToString(tp1Pips, 1) + " pips)\n";
+         }
+
+         if(info.tp2Price > 0 && info.tp2Price < info.takeProfit && (info.orderType == "BUY" ? info.tp2Price < info.takeProfit : info.tp2Price > info.takeProfit))
+         {
+            double tp2Pips = (pipSize > 0) ? MathAbs(info.tp2Price - info.entryPrice) / pipSize : 0;
+            caption += "🎯 <b>Take Profit 2 (1:2):</b> <code>" + DoubleToString(info.tp2Price, digits) + 
+                       "</code> (+" + DoubleToString(tp2Pips, 1) + " pips)\n";
+         }
+
+         caption += "🎯 <b>Take Profit (Final):</b> <code>" + DoubleToString(info.takeProfit, digits) + "</code>";
+         if(info.tpPips > 0)
+            caption += " (+" + DoubleToString(info.tpPips, 1) + " pips)";
+         caption += "\n";
+
+         if(info.riskRewardRatio > 0)
+         {
+            caption += "⚖️ <b>Risk : Reward:</b> <b>1 : " + DoubleToString(info.riskRewardRatio, 2) + "</b>\n";
+         }
+      }
+
+      // 6. Market Context (Spread & Server Time)
+      if(info.spreadPips > 0)
+      {
+         caption += "📏 <b>Spread:</b> " + DoubleToString(info.spreadPips, 1) + " pips\n";
+      }
+      caption += "🕒 <b>Server Time:</b> " + TimeToString(info.signalTime, TIME_DATE|TIME_MINUTES) + "\n";
+
+      // 7. Custom Trader Commentary (From on-chart note box)
+      if(StringLen(info.customComment) > 0 && info.customComment != "Type trade note / commentary here..." && info.customComment != "Manual Signal Snapshot")
+      {
+         caption += "─────────────────────────\n";
+         caption += "💬 <b>Trader's Commentary:</b>\n";
+         caption += "<i>\"" + info.customComment + "\"</i>\n";
+      }
+
+      caption += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+
+      // 8. Branding & Attribution
+      if(m_isLiteMode)
+      {
+         caption += "📢 <b>Powered by TeleSnap Pro</b>\n";
+         caption += "⚡ <i>Get TeleSnap on MQL5 Market: <a href=\"https://www.mql5.com\">mql5.com</a></i>";
+      }
+      else
+      {
          caption += "📢 <b>Channel:</b> " + m_channelTag + "\n";
          if(StringLen(m_vipInviteLink) > 0)
          {
             caption += "🔗 <a href=\"" + m_vipInviteLink + "\">Join VIP Community</a>\n";
          }
-         caption += "⚡ <i>Powered by TeleSnap Pro</i>\n";
-      }
-
-      if(style == STYLE_MARKETING)
-      {
-         caption += "\n<i>" + m_disclaimer + "</i>\n";
+         caption += "⚡ <i>Powered by TeleSnap Pro</i>";
       }
 
       return caption;

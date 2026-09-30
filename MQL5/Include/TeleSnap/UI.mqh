@@ -10,29 +10,31 @@
 #include "Config.mqh"
 
 //+------------------------------------------------------------------+
-//| Floating Chart HUD & Keyboard Event Controller                   |
+//| Floating Chart HUD with On-Chart Note Box & Quick Snap Buttons   |
 //+------------------------------------------------------------------+
 class CTeleSnapUI
 {
 private:
-   string            m_btnName;
-   string            m_statusName;
+   string            m_btnSnap;
+   string            m_btnNoteSnap;
+   string            m_editNote;
+   string            m_statusLabel;
    int               m_xPos;
    int               m_yPos;
-   int               m_width;
-   int               m_height;
    int               m_hotkey;
    long              m_chartId;
+   string            m_notePlaceholder;
 
 public:
-   CTeleSnapUI() : m_btnName("TeleSnap_HUD_Button"),
-                   m_statusName("TeleSnap_HUD_Status"),
+   CTeleSnapUI() : m_btnSnap("TeleSnap_Btn_Snap"),
+                   m_btnNoteSnap("TeleSnap_Btn_NoteSnap"),
+                   m_editNote("TeleSnap_Edit_Note"),
+                   m_statusLabel("TeleSnap_HUD_Status"),
                    m_xPos(25),
                    m_yPos(50),
-                   m_width(185),
-                   m_height(34),
-                   m_hotkey(123), // 123 is Virtual Key code for F12
-                   m_chartId(0)
+                   m_hotkey(123),
+                   m_chartId(0),
+                   m_notePlaceholder("Type trade note / commentary here...")
    {}
 
    ~CTeleSnapUI()
@@ -40,7 +42,7 @@ public:
       Destroy();
    }
 
-   //--- Create floating HUD button and status indicator
+   //--- Create complete floating control panel on chart
    bool Create(const long chartId, const int x = 25, const int y = 50, const int hotkeyKey = 123)
    {
       m_chartId = chartId;
@@ -50,40 +52,74 @@ public:
 
       Destroy();
 
-      // 1. Create Main Action Button
-      if(!ObjectCreate(m_chartId, m_btnName, OBJ_BUTTON, 0, 0, 0))
-      {
-         PrintFormat("[TeleSnap Pro] Failed to create HUD button. Error: %d", GetLastError());
-         return false;
-      }
+      int btnHeight = 30;
+      int editHeight = 24;
+      int totalWidth = 270;
 
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_XDISTANCE, m_xPos);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_YDISTANCE, m_yPos);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_XSIZE, m_width);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_YSIZE, m_height);
+      // 1. Button 1: Quick Snap [F12]
+      int btn1Width = 130;
+      ObjectCreate(m_chartId, m_btnSnap, OBJ_BUTTON, 0, 0, 0);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_XDISTANCE, m_xPos);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_YDISTANCE, m_yPos);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_XSIZE, btn1Width);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_YSIZE, btnHeight);
+      ObjectSetString(m_chartId, m_btnSnap, OBJPROP_TEXT, "📸 SNAP [F12]");
+      ObjectSetString(m_chartId, m_btnSnap, OBJPROP_FONT, "Segoe UI Semibold");
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_FONTSIZE, 9);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_COLOR, clrWhite);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_BGCOLOR, clrSteelBlue);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_BORDER_COLOR, clrDodgerBlue);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_STATE, false);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_HIDDEN, true);
 
-      ObjectSetString(m_chartId, m_btnName, OBJPROP_TEXT, "📸 SNAP & SEND [F12]");
-      ObjectSetString(m_chartId, m_btnName, OBJPROP_FONT, "Segoe UI Semibold");
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_FONTSIZE, 9);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_COLOR, clrWhite);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_BGCOLOR, clrSteelBlue);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_BORDER_COLOR, clrDodgerBlue);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_STATE, false);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_HIDDEN, true);
+      // 2. Button 2: Send With Note
+      int btn2Width = 135;
+      ObjectCreate(m_chartId, m_btnNoteSnap, OBJ_BUTTON, 0, 0, 0);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_XDISTANCE, m_xPos + btn1Width + 5);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_YDISTANCE, m_yPos);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_XSIZE, btn2Width);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_YSIZE, btnHeight);
+      ObjectSetString(m_chartId, m_btnNoteSnap, OBJPROP_TEXT, "💬 SEND + NOTE");
+      ObjectSetString(m_chartId, m_btnNoteSnap, OBJPROP_FONT, "Segoe UI Semibold");
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_FONTSIZE, 9);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_COLOR, clrWhite);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_BGCOLOR, C'35,50,75');
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_BORDER_COLOR, clrSteelBlue);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_STATE, false);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_HIDDEN, true);
 
-      // 2. Create Status Subtitle Label
-      ObjectCreate(m_chartId, m_statusName, OBJ_LABEL, 0, 0, 0);
-      ObjectSetInteger(m_chartId, m_statusName, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(m_chartId, m_statusName, OBJPROP_XDISTANCE, m_xPos + 2);
-      ObjectSetInteger(m_chartId, m_statusName, OBJPROP_YDISTANCE, m_yPos + m_height + 4);
-      ObjectSetString(m_chartId, m_statusName, OBJPROP_FONT, "Segoe UI");
-      ObjectSetInteger(m_chartId, m_statusName, OBJPROP_FONTSIZE, 8);
-      ObjectSetInteger(m_chartId, m_statusName, OBJPROP_COLOR, clrSilver);
-      ObjectSetString(m_chartId, m_statusName, OBJPROP_TEXT, "TeleSnap Active");
-      ObjectSetInteger(m_chartId, m_statusName, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(m_chartId, m_statusName, OBJPROP_HIDDEN, true);
+      // 3. On-Chart Editable Note Box (Direct Text Input)
+      ObjectCreate(m_chartId, m_editNote, OBJ_EDIT, 0, 0, 0);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_XDISTANCE, m_xPos);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_YDISTANCE, m_yPos + btnHeight + 4);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_XSIZE, totalWidth);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_YSIZE, editHeight);
+      ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, m_notePlaceholder);
+      ObjectSetString(m_chartId, m_editNote, OBJPROP_FONT, "Segoe UI");
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_FONTSIZE, 8);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrDarkGray);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BGCOLOR, C'20,26,38');
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_BORDER_COLOR, C'45,60,85');
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_READONLY, false);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_SELECTABLE, true);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_HIDDEN, true);
+
+      // 4. Status Subtitle Label
+      ObjectCreate(m_chartId, m_statusLabel, OBJ_LABEL, 0, 0, 0);
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_XDISTANCE, m_xPos + 2);
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_YDISTANCE, m_yPos + btnHeight + editHeight + 8);
+      ObjectSetString(m_chartId, m_statusLabel, OBJPROP_FONT, "Segoe UI");
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_FONTSIZE, 8);
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_COLOR, clrSilver);
+      ObjectSetString(m_chartId, m_statusLabel, OBJPROP_TEXT, "TeleSnap Active");
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_HIDDEN, true);
 
       ChartRedraw(m_chartId);
       return true;
@@ -91,50 +127,69 @@ public:
 
    void Destroy()
    {
-      ObjectDelete(m_chartId, m_btnName);
-      ObjectDelete(m_chartId, m_statusName);
+      ObjectDelete(m_chartId, m_btnSnap);
+      ObjectDelete(m_chartId, m_btnNoteSnap);
+      ObjectDelete(m_chartId, m_editNote);
+      ObjectDelete(m_chartId, m_statusLabel);
       ChartRedraw(m_chartId);
    }
 
-   //--- Set status message under button
+   //--- Read text entered by user in the on-chart edit box
+   string GetUserNote()
+   {
+      string note = ObjectGetString(m_chartId, m_editNote, OBJPROP_TEXT);
+      StringTrimLeft(note);
+      StringTrimRight(note);
+      if(note == m_notePlaceholder)
+         return "";
+      return note;
+   }
+
+   void ResetUserNotePlaceholder()
+   {
+      ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, m_notePlaceholder);
+      ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrDarkGray);
+      ChartRedraw(m_chartId);
+   }
+
    void SetStatusText(const string text, const color textColor = clrSilver)
    {
-      ObjectSetString(m_chartId, m_statusName, OBJPROP_TEXT, text);
-      ObjectSetInteger(m_chartId, m_statusName, OBJPROP_COLOR, textColor);
+      ObjectSetString(m_chartId, m_statusLabel, OBJPROP_TEXT, text);
+      ObjectSetInteger(m_chartId, m_statusLabel, OBJPROP_COLOR, textColor);
       ChartRedraw(m_chartId);
    }
 
-   //--- Visual state animations
    void SetStateProcessing()
    {
-      ObjectSetString(m_chartId, m_btnName, OBJPROP_TEXT, "⏳ DISPATCHING...");
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_BGCOLOR, clrDarkOrange);
+      ObjectSetString(m_chartId, m_btnSnap, OBJPROP_TEXT, "⏳ DISPATCHING");
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_BGCOLOR, clrDarkOrange);
       SetStatusText("Uploading to Telegram...", clrGold);
       ChartRedraw(m_chartId);
    }
 
    void SetStateSuccess(const uint elapsedMs, const string channel)
    {
-      ObjectSetString(m_chartId, m_btnName, OBJPROP_TEXT, "✅ SENT! (" + IntegerToString(elapsedMs) + "ms)");
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_BGCOLOR, clrSeaGreen);
+      ObjectSetString(m_chartId, m_btnSnap, OBJPROP_TEXT, "✅ SENT! (" + IntegerToString(elapsedMs) + "ms)");
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_BGCOLOR, clrSeaGreen);
       SetStatusText("● Sent to " + channel, clrLimeGreen);
       ChartRedraw(m_chartId);
    }
 
    void SetStateFailed(const string errorShort = "Failed (Check Experts Tab)")
    {
-      ObjectSetString(m_chartId, m_btnName, OBJPROP_TEXT, "❌ SEND FAILED");
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_BGCOLOR, clrCrimson);
+      ObjectSetString(m_chartId, m_btnSnap, OBJPROP_TEXT, "❌ SEND FAILED");
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_BGCOLOR, clrCrimson);
       SetStatusText("⚠️ " + errorShort, clrTomato);
       ChartRedraw(m_chartId);
    }
 
    void ResetState(const string channel = "")
    {
-      ObjectSetString(m_chartId, m_btnName, OBJPROP_TEXT, "📸 SNAP & SEND [F12]");
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_BGCOLOR, clrSteelBlue);
-      ObjectSetInteger(m_chartId, m_btnName, OBJPROP_STATE, false);
-      
+      ObjectSetString(m_chartId, m_btnSnap, OBJPROP_TEXT, "📸 SNAP [F12]");
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_BGCOLOR, clrSteelBlue);
+      ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_STATE, false);
+      ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_STATE, false);
+
       if(StringLen(channel) > 0)
          SetStatusText("● Connected: " + channel, clrMediumSeaGreen);
       else
@@ -144,21 +199,41 @@ public:
    }
 
    //--- Event Inspector
-   bool IsTriggered(const int id, const long &lparam, const double &dparam, const string &sparam)
+   int CheckTrigger(const int id, const long &lparam, const double &dparam, const string &sparam)
    {
-      // 1. Mouse Click on Button
-      if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_btnName)
+      // Check if user clicked into edit box to type (clear placeholder)
+      if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_editNote)
       {
-         ObjectSetInteger(m_chartId, m_btnName, OBJPROP_STATE, false);
-         return true;
+         string cur = ObjectGetString(m_chartId, m_editNote, OBJPROP_TEXT);
+         if(cur == m_notePlaceholder)
+         {
+            ObjectSetString(m_chartId, m_editNote, OBJPROP_TEXT, "");
+            ObjectSetInteger(m_chartId, m_editNote, OBJPROP_COLOR, clrWhite);
+            ChartRedraw(m_chartId);
+         }
+         return 0; // Just editing, don't snap
       }
 
-      // 2. Keyboard Hotkey (F12 or configured key)
+      // 1. Quick Snap button
+      if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_btnSnap)
+      {
+         ObjectSetInteger(m_chartId, m_btnSnap, OBJPROP_STATE, false);
+         return 1; // Snap without forcing note
+      }
+
+      // 2. Send With Note button
+      if(id == CHARTEVENT_OBJECT_CLICK && sparam == m_btnNoteSnap)
+      {
+         ObjectSetInteger(m_chartId, m_btnNoteSnap, OBJPROP_STATE, false);
+         return 2; // Snap WITH note
+      }
+
+      // 3. Hotkey F12
       if(id == CHARTEVENT_KEYDOWN && lparam == m_hotkey)
       {
-         return true;
+         return 1;
       }
 
-      return false;
+      return 0;
    }
 };

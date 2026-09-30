@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "Copyright 2026, Derrick Chumari."
 #property link        "https://github.com/dchumari/TeleSnap-Pro"
-#property version     "1.10"
+#property version     "1.20"
 #property description "⚡ TeleSnap Lite: Free Chart Snapper for Telegram"
 #property description "Free Edition with viral watermarking. Snap and send charts to Telegram with one click."
 #property strict
@@ -23,9 +23,9 @@
 //| Input Parameters (Lite Edition: Watermark is Locked)             |
 //+------------------------------------------------------------------+
 input group "=== 🤖 Telegram Bot Configuration ==="
-input string                 InpBotToken       = "";                      // Bot API Token (Leave blank to use Saved Global ID)
+input string                 InpBotToken       = "";                      // Bot API Token (from @BotFather)
 input string                 InpChatId         = "";                      // Channel/Group Chat ID (e.g. @MyChannel or -100xxx)
-input bool                   InpSaveAsGlobal   = true;                    // Save IDs globally so all other charts use them
+input bool                   InpSaveCredentials = false;                  // Save IDs to local disk (Keep FALSE for pure memory privacy)
 input bool                   InpSetDefaultTpl  = false;                   // Save as MT5 Default Template (Auto-opens on all charts)
 input int                    InpTimeoutMs      = 8000;                    // Network Timeout (milliseconds)
 
@@ -35,7 +35,7 @@ input ENUM_WATERMARK_POSITION InpWatermarkPos  = POS_BOTTOM_RIGHT;        // On-
 
 input group "=== 📸 Capture & Image Settings ==="
 input ENUM_IMAGE_RESOLUTION  InpResolution     = RES_HD_1280x720;         // Image Resolution Preset
-input ENUM_CAPTION_STYLE     InpCaptionStyle   = STYLE_MINIMAL;           // Signal Caption Layout Style
+input ENUM_CAPTION_STYLE     InpCaptionStyle   = STYLE_INSTITUTIONAL;     // Signal Caption Layout Style
 input ENUM_CAPTURE_TRIGGER   InpTriggerMode    = TRIGGER_BUTTON_ONLY;     // Capture Trigger Mode
 input int                    InpHotkeyKey      = 123;                     // Keyboard Hotkey (123 = F12)
 
@@ -51,18 +51,15 @@ CWatermarkEngine  g_watermark;
 CTeleSnapUI       g_ui;
 CTradeMonitor     g_monitor;
 
-//--- Active state & credentials
+//--- Active state & credentials (In-memory by default)
 string            g_activeBotToken = "";
 string            g_activeChatId   = "";
-int               g_activeTrigger  = 0;
-int               g_activeRes      = 0;
-int               g_activeStyle    = 0;
 datetime          g_lastResetTime  = 0;
 bool              g_needsReset     = false;
 
-//--- Forward declaration
-void ExecuteSnapAndSend(const string triggerSource, const TradeSignalInfo &preloadedSignal);
-void ExecuteSnapAndSend(const string triggerSource);
+//--- Forward declarations
+void ExecuteSnapAndSend(const string triggerSource, const string userNote, const TradeSignalInfo &preloadedSignal);
+void ExecuteSnapAndSend(const string triggerSource, const string userNote = "");
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -70,49 +67,48 @@ void ExecuteSnapAndSend(const string triggerSource);
 int OnInit()
 {
    Print("=================================================");
-   Print("⚡ Initializing TeleSnap Lite v1.10 (Free MQL5 Edition)");
+   Print("⚡ Initializing TeleSnap Lite v1.20 (Free MQL5 Edition)");
    Print("=================================================");
 
-   // 1. Strictly enforce LITE MODE (Watermark is locked and unchangeable)
+   // 1. Strictly enforce LITE MODE (Watermark is locked)
    g_watermark.SetLiteMode(true);
 
-   // 2. Resolve Credentials (Input vs Global Shared Storage)
+   // 2. Resolve Credentials
    g_activeBotToken = InpBotToken;
    g_activeChatId   = InpChatId;
-   g_activeTrigger  = (int)InpTriggerMode;
-   g_activeRes      = (int)InpResolution;
-   g_activeStyle    = (int)InpCaptionStyle;
 
    StringTrimLeft(g_activeBotToken);
    StringTrimRight(g_activeBotToken);
    StringTrimLeft(g_activeChatId);
    StringTrimRight(g_activeChatId);
 
-   if(StringLen(g_activeBotToken) == 0 || StringLen(g_activeChatId) == 0)
+   if(InpSaveCredentials)
    {
-      string loadedToken = "", loadedChat = "", loadedTag = "", loadedLink = "";
-      int loadedTrig = 0, loadedRes = 0, loadedStyle = 0;
-
-      if(g_storage.LoadSettings(loadedToken, loadedChat, loadedTag, loadedLink, loadedTrig, loadedRes, loadedStyle))
+      if(StringLen(g_activeBotToken) == 0 || StringLen(g_activeChatId) == 0)
       {
-         g_activeBotToken = loadedToken;
-         g_activeChatId   = loadedChat;
-         PrintFormat("[TeleSnap Lite] ✅ Auto-loaded credentials from Shared Storage! (Chat: %s)", g_activeChatId);
+         string loadedToken = "", loadedChat = "", loadedTag = "", loadedLink = "";
+         int loadedTrig = 0, loadedRes = 0, loadedStyle = 0;
+         if(g_storage.LoadSettings(loadedToken, loadedChat, loadedTag, loadedLink, loadedTrig, loadedRes, loadedStyle))
+         {
+            g_activeBotToken = loadedToken;
+            g_activeChatId   = loadedChat;
+            PrintFormat("[TeleSnap Lite] Auto-loaded credentials from disk. Target: %s", g_activeChatId);
+         }
       }
-   }
-   else if(InpSaveAsGlobal)
-   {
-      g_storage.SaveSettings(g_activeBotToken, g_activeChatId, "Powered by TeleSnap Pro", "https://www.mql5.com",
-                             g_activeTrigger, g_activeRes, g_activeStyle);
+      else
+      {
+         g_storage.SaveSettings(g_activeBotToken, g_activeChatId, "Powered by TeleSnap Pro", "https://www.mql5.com",
+                                (int)InpTriggerMode, (int)InpResolution, (int)InpCaptionStyle);
+      }
    }
 
    // 3. Initialize Telegram client
    g_telegram.Init(g_activeBotToken, g_activeChatId, InpTimeoutMs);
 
-   // 4. Initialize Floating HUD Button
+   // 4. Initialize Floating HUD Button & Note Box
    if(!g_ui.Create(0, InpHudX, InpHudY, InpHotkeyKey))
    {
-      Print("[TeleSnap Lite] Warning: Could not create on-chart HUD button.");
+      Print("[TeleSnap Lite] Warning: Could not create on-chart HUD controls.");
    }
 
    // 5. Initialize Trade Monitor
@@ -159,16 +155,24 @@ void OnDeinit(const int reason)
 }
 
 //+------------------------------------------------------------------+
-//| Chart Event handler (Clicks & Hotkeys)                           |
+//| Chart Event handler (Clicks, Hotkeys & On-Chart Note Input)      |
 //+------------------------------------------------------------------+
 void OnChartEvent(const int id,
                   const long &lparam,
                   const double &dparam,
                   const string &sparam)
 {
-   if(g_ui.IsTriggered(id, lparam, dparam, sparam))
+   int trigger = g_ui.CheckTrigger(id, lparam, dparam, sparam);
+
+   if(trigger == 1)
    {
-      ExecuteSnapAndSend("MANUAL_CLICK");
+      string userNote = g_ui.GetUserNote();
+      ExecuteSnapAndSend("MANUAL_SNAP", userNote);
+   }
+   else if(trigger == 2)
+   {
+      string userNote = g_ui.GetUserNote();
+      ExecuteSnapAndSend("MANUAL_NOTE_SNAP", userNote);
    }
 }
 
@@ -187,55 +191,59 @@ void OnTimer()
 //+------------------------------------------------------------------+
 //| Overload for manual trigger without preloaded signal             |
 //+------------------------------------------------------------------+
-void ExecuteSnapAndSend(const string triggerSource)
+void ExecuteSnapAndSend(const string triggerSource, const string userNote)
 {
    TradeSignalInfo emptySignal;
    ZeroMemory(emptySignal);
-   ExecuteSnapAndSend(triggerSource, emptySignal);
+   ExecuteSnapAndSend(triggerSource, userNote, emptySignal);
 }
 
 //+------------------------------------------------------------------+
 //| Core Action: Snap Chart, Overlay Locked Watermark & Dispatch     |
 //+------------------------------------------------------------------+
-void ExecuteSnapAndSend(const string triggerSource, const TradeSignalInfo &preloadedSignal)
+void ExecuteSnapAndSend(const string triggerSource, const string userNote, const TradeSignalInfo &preloadedSignal)
 {
    uint startTime = GetTickCount();
    g_ui.SetStateProcessing();
 
    TradeSignalInfo signal;
 
-   // 1. Gather trade details
    if(StringLen(preloadedSignal.symbol) > 0)
    {
       signal = preloadedSignal;
    }
    else
    {
-      signal.symbol = _Symbol;
-      signal.timeframe = (ENUM_TIMEFRAMES)_Period;
-      signal.signalTime = TimeCurrent();
-      signal.customComment = "TeleSnap Lite Snapshot";
-
-      if(PositionSelect(_Symbol))
+      if(!g_monitor.GetActivePositionSignal(signal))
       {
-         ENUM_POSITION_TYPE pType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
-         signal.orderType = (pType == POSITION_TYPE_BUY) ? "BUY" : "SELL";
-         signal.entryPrice = PositionGetDouble(POSITION_PRICE_OPEN);
-         signal.stopLoss = PositionGetDouble(POSITION_SL);
-         signal.takeProfit = PositionGetDouble(POSITION_TP);
-         signal.ticket = PositionGetInteger(POSITION_TICKET);
-      }
-      else
-      {
+         signal.symbol = _Symbol;
+         signal.timeframe = (ENUM_TIMEFRAMES)_Period;
+         signal.status = "WATCHLIST";
          signal.orderType = "MARKET SETUP";
          signal.entryPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+         signal.currentPrice = signal.entryPrice;
          signal.stopLoss = 0;
          signal.takeProfit = 0;
+         signal.volume = 0;
          signal.ticket = 0;
+         signal.floatingPnL = 0;
+         signal.floatingPips = 0;
+         signal.signalTime = TimeCurrent();
+
+         double point = SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+         int digits = (int)SymbolInfoInteger(_Symbol, SYMBOL_DIGITS);
+         double pipSize = (digits == 3 || digits == 5) ? point * 10.0 : point;
+         long spreadPts = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+         signal.spreadPips = (pipSize > 0) ? (spreadPts * point) / pipSize : 0;
       }
    }
 
-   // 2. Draw locked on-chart watermark ("Powered by TeleSnap Pro")
+   if(StringLen(userNote) > 0)
+   {
+      signal.customComment = userNote;
+   }
+
+   // 2. Draw locked watermark ("Powered by TeleSnap Pro")
    g_watermark.DrawOnChartWatermark(0, InpWatermarkPos, clrDodgerBlue);
 
    // 3. Capture high-resolution screenshot into memory buffer

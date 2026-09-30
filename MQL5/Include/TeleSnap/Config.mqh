@@ -10,9 +10,9 @@
 //--- Capture triggers enum
 enum ENUM_CAPTURE_TRIGGER
 {
-   TRIGGER_BUTTON_ONLY,     // Manual HUD Button & Hotkey (F12) Only
-   TRIGGER_AUTO_ON_ENTRY,   // Auto-Snap on Trade Open + Button/Hotkey
-   TRIGGER_AUTO_ALL_EVENTS  // Auto-Snap on Open, SL, and TP + Button/Hotkey
+   TRIGGER_BUTTON_ONLY,     // Manual HUD Buttons & Hotkey (F12) Only
+   TRIGGER_AUTO_ON_ENTRY,   // Auto-Snap on Trade Open + Manual Buttons
+   TRIGGER_AUTO_ALL_EVENTS  // Auto-Snap on Open, SL, and TP + Manual Buttons
 };
 
 //--- Image resolution presets
@@ -38,22 +38,30 @@ enum ENUM_CAPTION_STYLE
 {
    STYLE_MINIMAL,           // Clean: Symbol, Direction, Entry, SL, TP
    STYLE_DETAILED,          // Detailed: Risk:Reward, Pips, Account Risk %, Time
-   STYLE_MARKETING          // Viral: Full stats + VIP Join Link & Disclaimers
+   STYLE_INSTITUTIONAL      // Institutional: In-Trade stats, multi-TP targets, spread, floating PnL & Note
 };
 
-//--- Trade snapshot data structure
+//--- Trade snapshot data structure (Extended with rich in-trade metrics)
 struct TradeSignalInfo
 {
    string            symbol;
    ENUM_TIMEFRAMES   timeframe;
+   string            status;          // "IN_TRADE", "NEW_SETUP", "TAKE_PROFIT", "STOP_LOSS", "WATCHLIST"
    string            orderType;       // BUY, SELL, BUY LIMIT, etc.
    double            entryPrice;
+   double            currentPrice;
    double            stopLoss;
    double            takeProfit;
+   double            tp1Price;        // 1:1 R:R target
+   double            tp2Price;        // 1:2 R:R target
+   double            volume;          // Lot size (e.g. 0.24)
+   double            floatingPnL;     // Current profit in $
+   double            floatingPips;    // Current profit in pips
    double            slPips;
    double            tpPips;
    double            riskRewardRatio;
+   double            spreadPips;
    datetime          signalTime;
    ulong             ticket;
-   string            customComment;
+   string            customComment;   // Custom message from on-chart edit box
 };

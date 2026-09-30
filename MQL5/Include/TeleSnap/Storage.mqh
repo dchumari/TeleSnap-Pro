@@ -10,8 +10,7 @@
 #include "Config.mqh"
 
 //+------------------------------------------------------------------+
-//| Global Settings Persistence Engine (FILE_COMMON Storage)         |
-//| Saves Bot Token, Chat ID, and preferences across all charts/MT5  |
+//| Settings Persistence Engine (Strict Opt-In Privacy Control)       |
 //+------------------------------------------------------------------+
 class CTeleSnapStorage
 {
@@ -22,7 +21,17 @@ public:
    CTeleSnapStorage() : m_filename("TeleSnap/global_settings.ini") {}
    ~CTeleSnapStorage() {}
 
-   //--- Save settings to common terminal storage accessible by ALL charts
+   //--- Securely wipe any saved settings file from disk
+   void WipeSavedSettings()
+   {
+      if(FileIsExist(m_filename, FILE_COMMON))
+      {
+         FileDelete(m_filename, FILE_COMMON);
+         Print("[TeleSnap Privacy] 🔒 Wiped all saved credential files from disk.");
+      }
+   }
+
+   //--- Save settings to common terminal storage (Only called if user explicitly allows)
    bool SaveSettings(const string botToken,
                      const string chatId,
                      const string channelTag,
@@ -31,13 +40,9 @@ public:
                      const int resolution,
                      const int captionStyle)
    {
-      // Open in common directory shared across all charts and terminals
       int handle = FileOpen(m_filename, FILE_WRITE | FILE_TXT | FILE_COMMON);
       if(handle == INVALID_HANDLE)
-      {
-         PrintFormat("[TeleSnap Storage] Failed to write settings file. Error: %d", GetLastError());
          return false;
-      }
 
       FileWriteString(handle, "[TeleSnap_Config]\r\n");
       FileWriteString(handle, "bot_token=" + botToken + "\r\n");
@@ -49,11 +54,9 @@ public:
       FileWriteString(handle, "caption_style=" + IntegerToString(captionStyle) + "\r\n");
 
       FileClose(handle);
-      Print("[TeleSnap Storage] ✅ Settings successfully saved to global shared storage!");
       return true;
    }
 
-   //--- Check if global settings exist
    bool HasSettings()
    {
       return FileIsExist(m_filename, FILE_COMMON);
