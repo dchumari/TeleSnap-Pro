@@ -29,8 +29,8 @@ Write-Host "======================================================" -ForegroundC
 & $NssmExe stop $ServiceName 2>$null
 & $NssmExe remove $ServiceName confirm 2>$null
 
-# Install service
-& $NssmExe install $ServiceName "$PythonExe" "`"$ScriptPath`""
+# Install service with unbuffered python output for real-time logging
+& $NssmExe install $ServiceName "$PythonExe" "-u `"$ScriptPath`""
 & $NssmExe set $ServiceName AppDirectory "$WorkingDir"
 & $NssmExe set $ServiceName DisplayName "$DisplayName"
 & $NssmExe set $ServiceName Description "$Description"
@@ -43,8 +43,8 @@ Write-Host "======================================================" -ForegroundC
 & $NssmExe set $ServiceName AppRotateOnline 1
 & $NssmExe set $ServiceName AppRotateBytes 10485760
 
-# Auto-recovery
-& $NssmExe set $ServiceName AppRestartDelay 5000
+# Auto-recovery: 1 second restart delay for fast seamless auto-reload
+& $NssmExe set $ServiceName AppRestartDelay 1000
 
 # Start Service
 Write-Host "Starting $ServiceName..." -ForegroundColor Green

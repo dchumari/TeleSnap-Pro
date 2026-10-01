@@ -9,12 +9,14 @@ import time
 import json
 import urllib.request
 import urllib.parse
+import threading
+import py_compile
 
-# Ensure UTF-8 output encoding for Windows command line
+# Ensure UTF-8 output encoding and line buffering for real-time logging
 if sys.platform.startswith('win'):
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
+        sys.stderr.reconfigure(encoding='utf-8', line_buffering=True)
     except Exception:
         pass
 
@@ -242,11 +244,135 @@ def handle_callback_query(callback):
         )
         send_message(chat_id, prompt_text)
 
+def is_running_as_service():
+    """Detect if running as a Windows Service (Session 0) under NSSM."""
+    if sys.platform.startswith('win'):
+        try:
+            import ctypes
+            session_id = ctypes.c_uint32()
+            if ctypes.windll.kernel32.ProcessIdToSessionId(os.getpid(), ctypes.byref(session_id)):
+                return session_id.value == 0
+        except Exception:
+            pass
+    return not sys.stdin or not hasattr(sys.stdin, "isatty") or not sys.stdin.isatty()
+
+def is_valid_python(file_path):
+    """Ensure python file has valid syntax before triggering a reload."""
+    if not file_path.endswith('.py'):
+        return True
+    try:
+        py_compile.compile(file_path, doraise=True)
+        return True
+    except py_compile.PyCompileError as e:
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ⚠️ Syntax error in {os.path.basename(file_path)}, reload postponed: {e}")
+        return False
+    except Exception:
+        return False
+
+def reload_service(changed_file):
+    """Gracefully restart the service on file change."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    rel_path = os.path.relpath(changed_file, base_dir)
+    print("\n==================================================")
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 🔄 File change detected: {rel_path}")
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] ⚡ Auto-reloading TeleSnap Support Service...")
+    print("==================================================")
+    sys.stdout.flush()
+    sys.stderr.flush()
+    time.sleep(0.5)
+
+    if is_running_as_service():
+        # NSSM supervisor automatically restarts the service upon process termination
+        os._exit(0)
+    else:
+        # Running in interactive development terminal
+        try:
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        except Exception as e:
+            print(f"Failed to execv: {e}, exiting.")
+            os._exit(0)
+
+class AutoReloader:
+    """Monitors service scripts and .env files for changes and reloads automatically."""
+    def __init__(self, watch_dirs=None, watch_files=None, poll_interval=1.0):
+        self.watch_dirs = watch_dirs or []
+        self.watch_files = watch_files or []
+        self.poll_interval = poll_interval
+        self._mtimes = {}
+        self._running = True
+        self._snapshot()
+
+    def _get_tracked_files(self):
+        files = set()
+        for f in self.watch_files:
+            if os.path.exists(f):
+                files.add(os.path.abspath(f))
+        for d in self.watch_dirs:
+            if os.path.isdir(d):
+                for root, _, filenames in os.walk(d):
+                    if "__pycache__" in root:
+                        continue
+                    for fname in filenames:
+                        if fname.endswith(".py") or fname == ".env":
+                            files.add(os.path.abspath(os.path.join(root, fname)))
+        return files
+
+    def _snapshot(self):
+        for f in self._get_tracked_files():
+            try:
+                self._mtimes[f] = os.path.getmtime(f)
+            except OSError:
+                pass
+
+    def check_for_changes(self):
+        current_files = self._get_tracked_files()
+        for f in current_files:
+            try:
+                current_mtime = os.path.getmtime(f)
+                if f not in self._mtimes:
+                    # New file added
+                    if is_valid_python(f):
+                        return f
+                elif current_mtime > self._mtimes[f]:
+                    # File modified
+                    if is_valid_python(f):
+                        return f
+            except OSError:
+                pass
+        return None
+
+    def start(self, on_change_callback):
+        def _loop():
+            while self._running:
+                time.sleep(self.poll_interval)
+                changed = self.check_for_changes()
+                if changed:
+                    self._running = False
+                    on_change_callback(changed)
+                    break
+        t = threading.Thread(target=_loop, daemon=True, name="TeleSnap-AutoReloader")
+        t.start()
+        return t
+
 def run_service():
     print("==================================================")
     print("⚡ Starting TeleSnap Support Bot Service")
     print(f"🤖 Bot: @telesnap_pro_bot")
+    mode_str = "Windows Service (NSSM Session 0)" if is_running_as_service() else "Interactive Terminal"
+    print(f"⚙️ Mode: {mode_str}")
     print("==================================================")
+
+    # Initialize auto-reloader for code & env changes
+    server_services_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.abspath(os.path.join(server_services_dir, ".."))
+    watch_files = [
+        os.path.join(project_root, ".env"),
+        os.path.join(server_services_dir, ".env"),
+        os.path.abspath(__file__)
+    ]
+    reloader = AutoReloader(watch_dirs=[server_services_dir], watch_files=watch_files, poll_interval=1.0)
+    reloader.start(reload_service)
+    print("🔄 Auto-Reloader active: changes to Python files or .env will reload service automatically.")
 
     # Verify bot connectivity
     me = call_telegram_api("getMe")
@@ -272,7 +398,7 @@ def run_service():
 
     while True:
         try:
-            updates = call_telegram_api("getUpdates", {"offset": last_offset, "timeout": 20})
+            updates = call_telegram_api("getUpdates", {"offset": last_offset, "timeout": 5})
             if updates and updates.get("ok"):
                 for item in updates.get("result", []):
                     last_offset = item["update_id"] + 1
@@ -280,7 +406,7 @@ def run_service():
                         handle_incoming_message(item["message"])
                     elif "callback_query" in item:
                         handle_callback_query(item["callback_query"])
-            time.sleep(1)
+            time.sleep(0.5)
         except KeyboardInterrupt:
             print("\n🛑 Service stopped by user.")
             break
