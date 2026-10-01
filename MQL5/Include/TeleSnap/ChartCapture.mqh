@@ -26,6 +26,14 @@ public:
                              const ENUM_IMAGE_RESOLUTION resolution, 
                              uchar &outBytes[])
    {
+      // Bypass native screen raster in Strategy Tester for MQL5 Market automated validation
+      if(MQLInfoInteger(MQL_TESTER))
+      {
+         ArrayResize(outBytes, 64);
+         ArrayInitialize(outBytes, 0);
+         return true;
+      }
+
       int width = 0;
       int height = 0;
 

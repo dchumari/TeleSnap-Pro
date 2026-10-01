@@ -314,6 +314,18 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
 }
 
 //+------------------------------------------------------------------+
+//| Expert tick function (Strategy Tester compatibility)             |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   // In Strategy Tester, process milestone checks and queues on ticks
+   if(MQLInfoInteger(MQL_TESTER))
+   {
+      OnTimer();
+   }
+}
+
+//+------------------------------------------------------------------+
 //| Timer function: Polls remote buttons & scans open charts         |
 //+------------------------------------------------------------------+
 void OnTimer()
