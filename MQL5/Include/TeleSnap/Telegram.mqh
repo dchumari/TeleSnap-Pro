@@ -20,6 +20,7 @@ private:
    string            m_botUsername;
    int               m_timeout;
    long              m_messageThreadId;
+   long              m_lastUpdateId;
 
    //--- Helper to append string to uchar array
    void AppendString(uchar &data[], const string text)
@@ -70,7 +71,7 @@ private:
    }
 
 public:
-   CTelegramClient() : m_timeout(10000), m_botUsername(""), m_messageThreadId(0) {}
+   CTelegramClient() : m_timeout(10000), m_botUsername(""), m_messageThreadId(0), m_lastUpdateId(0) {}
    ~CTelegramClient() {}
 
    //--- Escape special HTML characters to prevent Telegram parse errors
@@ -399,5 +400,70 @@ public:
          PrintFormat("[TeleSnap Pro] ❌ SendMessage failed. %s", outErrorMessage);
          return false;
       }
+   }
+
+   //--- Poll for Inbound Commands from Telegram (/snap, /recap, /status)
+   bool CheckInboundCommands(string &outCmd, string &outParam, string &outSender)
+   {
+      outCmd = "";
+      outParam = "";
+      outSender = "";
+
+      if(MQLInfoInteger(MQL_TESTER) || StringLen(m_botToken) == 0)
+         return false;
+
+      string url = "https://api.telegram.org/bot" + m_botToken + "/getUpdates?offset=" + IntegerToString(m_lastUpdateId + 1) + "&limit=1&timeout=0";
+      uchar postData[];
+      char resultData[];
+      string resultHeaders;
+      ResetLastError();
+
+      int res = WebRequest("GET", url, "", m_timeout, postData, resultData, resultHeaders);
+      if(res != 200)
+         return false;
+
+      string json = CharArrayToString(resultData, 0, WHOLE_ARRAY, CP_UTF8);
+      if(StringFind(json, "\"ok\":true") < 0 || StringFind(json, "\"update_id\"") < 0)
+         return false;
+
+      // Extract update_id
+      string updateIdStr = ExtractJsonField(json, "update_id");
+      long uid = StringToInteger(updateIdStr);
+      if(uid > m_lastUpdateId)
+         m_lastUpdateId = uid;
+
+      // Extract message text
+      int textPos = StringFind(json, "\"text\":\"");
+      if(textPos < 0) return false;
+
+      textPos += 8;
+      int textEnd = StringFind(json, "\"", textPos);
+      if(textEnd < 0) return false;
+
+      string text = StringSubstr(json, textPos, textEnd - textPos);
+      StringTrimLeft(text);
+      StringTrimRight(text);
+
+      if(StringFind(text, "/") != 0) return false;
+
+      // Extract username
+      outSender = ExtractJsonField(json, "username");
+
+      // Split command and parameter
+      int spacePos = StringFind(text, " ");
+      if(spacePos > 0)
+      {
+         outCmd = StringSubstr(text, 1, spacePos - 1);
+         outParam = StringSubstr(text, spacePos + 1);
+         StringTrimLeft(outParam);
+         StringTrimRight(outParam);
+      }
+      else
+      {
+         outCmd = StringSubstr(text, 1);
+      }
+
+      StringToUpper(outCmd);
+      return (StringLen(outCmd) > 0);
    }
 };

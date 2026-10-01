@@ -36,10 +36,17 @@ input bool                   InpSetDefaultTpl  = false;                   // Sav
 input int                    InpTimeoutMs      = 8000;                    // Network Timeout (milliseconds)
 
 input group "=== 🏷️ Branding & Watermark (Pro Edition) ==="
-input string                 InpChannelTag     = "@MyVIPSignals";         // Telegram Channel Handle Watermark
-input string                 InpInviteLink     = "https://t.me/";         // VIP Invite Link (Shown in Caption)
+input string                 InpChannelTag     = "@profit_able_trader";   // Telegram Channel Handle Watermark
+input string                 InpInviteLink     = "https://t.me/profit_able_trader"; // VIP Invite Link (Shown in Caption)
 input ENUM_WATERMARK_POSITION InpWatermarkPos  = POS_BOTTOM_RIGHT;        // On-Chart Watermark Position
 input color                  InpWatermarkColor = clrDimGray;              // Watermark Text Color
+
+input group "=== 🎯 Profit Milestones & Daily Recap ==="
+input int                    InpMilestoneStepPips = 50;                  // Auto-Snap on Floating Profit Milestones (pips, 0=Disabled)
+input bool                   InpEnableDailyRecap  = true;                // Enable End-of-Day Performance Recap
+input int                    InpDailyRecapHour    = 23;                  // Broker Hour to Post Daily Recap (0-23)
+input string                 InpSupportBot        = "TeleSnap";          // Telegram Customer Support Handle (e.g. TeleSnap)
+input bool                   InpEnableInboundCmds = true;                // Listen to Telegram Inbound Commands (/snap, /recap, /status)
 
 input group "=== 📸 Capture & Image Settings ==="
 input ENUM_IMAGE_RESOLUTION  InpResolution     = RES_HD_1280x720;         // Image Resolution Preset
@@ -92,6 +99,8 @@ bool              g_needsReset         = false;
 void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, const string userNote, const TradeSignalInfo &preloadedSignal);
 void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, const string userNote = "");
 void ExecuteSnapAndSend(const string triggerSource, const string userNote = "");
+void PostDailyRecap();
+void HandleInboundCommand(const string cmd, const string param, const string sender);
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -253,8 +262,14 @@ void OnChartEvent(const int id,
    {
       if(id == CHARTEVENT_OBJECT_CLICK)
       {
-         if(g_hub.HandleDashboardClick(sparam))
+         int clickRes = g_hub.HandleDashboardClick(sparam);
+         if(clickRes == 1)
             return;
+         else if(clickRes == 2)
+         {
+            PostDailyRecap();
+            return;
+         }
       }
       else if(id == CHARTEVENT_CHART_CHANGE)
       {
@@ -348,7 +363,51 @@ void OnTimer()
       }
    }
 
-   // 3. Process Anti-Spam queued signals (paced at 400ms spacing to prevent Telegram 429)
+   // 3. Profit Milestones auto-snapping (Every tick / timer cycle)
+   if(InpMilestoneStepPips > 0)
+   {
+      TradeSignalInfo mSignal;
+      string mReason = "";
+      if(g_monitor.CheckProfitMilestones(InpMilestoneStepPips, mSignal, mReason))
+      {
+         long targetChartId = 0;
+         if(InpEnableCommandCenter)
+            targetChartId = g_hub.FindLinkedChartForSymbol(mSignal.symbol);
+         if(targetChartId > 0)
+            mSignal.timeframe = ChartPeriod(targetChartId);
+         ExecuteSnapAndSend(targetChartId, mReason, "", mSignal);
+      }
+   }
+
+   // 4. End-of-Day Performance Recap timer
+   if(InpEnableDailyRecap)
+   {
+      static int s_lastRecapDay = -1;
+      MqlDateTime dt;
+      TimeToStruct(TimeCurrent(), dt);
+      if(dt.hour == InpDailyRecapHour && dt.day != s_lastRecapDay)
+      {
+         s_lastRecapDay = dt.day;
+         PostDailyRecap();
+      }
+   }
+
+   // 5. Inbound Telegram Commands polling (/snap, /recap, /status, /help)
+   if(InpEnableInboundCmds)
+   {
+      static uint s_lastCmdPollTick = 0;
+      if(GetTickCount() - s_lastCmdPollTick >= 3000)
+      {
+         s_lastCmdPollTick = GetTickCount();
+         string inCmd = "", inParam = "", inSender = "";
+         if(g_telegram.CheckInboundCommands(inCmd, inParam, inSender))
+         {
+            HandleInboundCommand(inCmd, inParam, inSender);
+         }
+      }
+   }
+
+   // 6. Process Anti-Spam queued signals (paced at 400ms spacing to prevent Telegram 429)
    if(ArraySize(g_signalQueue) > 0 && (GetTickCount() - g_lastDispatchTick >= 400))
    {
       QueuedSignalItem item = g_signalQueue[0];
@@ -359,7 +418,7 @@ void OnTimer()
       ExecuteSnapAndSend(item.targetChartId, item.triggerSource, item.userNote, item.signal);
    }
 
-   // 4. Reset button states after 3 seconds
+   // 7. Reset button states after 3 seconds
    if(g_needsReset && TimeCurrent() - g_lastResetTime >= 3)
    {
       if(InpEnableCommandCenter)
@@ -372,6 +431,87 @@ void OnTimer()
          g_ui.ResetState(g_telegram.GetChatId());
       }
       g_needsReset = false;
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Post Daily Performance Recap Card to Telegram                    |
+//+------------------------------------------------------------------+
+void PostDailyRecap()
+{
+   datetime todayStart = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
+   datetime now = TimeCurrent();
+   DailyPerformanceSummary summary;
+   if(g_monitor.GeneratePerformanceRecap(todayStart, now, summary))
+   {
+      string recapMsg = CTradeMonitor::FormatPerformanceRecapHtml(summary, g_telegram.GetChatId(), InpSupportBot);
+      string errMsg = "";
+      bool sent = g_telegram.SendMessage(recapMsg, errMsg);
+      if(sent && InpEnableCommandCenter)
+         g_hub.AddLog("DAILY_RECAP", "📊 Posted Daily Performance Recap to Telegram", 150, true);
+      else if(!sent)
+         PrintFormat("[TeleSnap Pro] ❌ Failed to post daily recap: %s", errMsg);
+   }
+   else
+   {
+      Print("[TeleSnap Pro] ℹ️ No closed deals found today for recap.");
+      string emptyMsg = "📊 <b>DAILY PERFORMANCE RECAP</b>\n📅 Date: <b>" + TimeToString(todayStart, TIME_DATE) + 
+                        "</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━\n<i>No closed trades executed today.</i>\n━━━━━━━━━━━━━━━━━━━━━━━━━\n📢 <b>Powered by TeleSnap Pro</b>\n⚡️ Customer Support: @" + InpSupportBot + "\n";
+      string errMsg = "";
+      g_telegram.SendMessage(emptyMsg, errMsg);
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Handle Inbound Telegram Bot Commands (/snap, /recap, /status)    |
+//+------------------------------------------------------------------+
+void HandleInboundCommand(const string cmd, const string param, const string sender)
+{
+   PrintFormat("[TeleSnap Pro] 📨 Received Telegram command: /%s %s from @%s", cmd, param, sender);
+
+   if(cmd == "SNAP")
+   {
+      long targetChart = 0;
+      string targetSym = param;
+      if(StringLen(targetSym) > 0)
+      {
+         StringToUpper(targetSym);
+         targetChart = g_hub.FindLinkedChartForSymbol(targetSym);
+      }
+
+      if(targetChart == 0)
+         targetChart = ChartID();
+
+      ExecuteSnapAndSend(targetChart, "REMOTE_COMMAND", "📸 Snapped via Telegram command /snap " + param);
+   }
+   else if(cmd == "RECAP")
+   {
+      PostDailyRecap();
+   }
+   else if(cmd == "STATUS")
+   {
+      string statusMsg = "⚡ <b>TeleSnap Command Center Status</b>\n" +
+                         "━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                         "🟢 Status: <b>ONLINE & OPERATIONAL</b>\n" +
+                         "🖥️ Host Chart: <b>" + _Symbol + " (" + EnumToString((ENUM_TIMEFRAMES)_Period) + ")</b>\n" +
+                         "🕒 Broker Time: <b>" + TimeToString(TimeCurrent(), TIME_DATE | TIME_SECONDS) + "</b>\n" +
+                         "━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                         "📢 <b>Powered by TeleSnap Pro</b>\n⚡️ Customer Support: @" + InpSupportBot + "\n";
+      string errMsg = "";
+      g_telegram.SendMessage(statusMsg, errMsg);
+   }
+   else if(cmd == "HELP")
+   {
+      string helpMsg = "🤖 <b>TeleSnap Remote Bot Commands:</b>\n" +
+                       "━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                       "📸 <code>/snap</code> - Instant snapshot of active chart\n" +
+                       "📸 <code>/snap [SYMBOL]</code> - Instant snapshot of symbol chart (e.g. <code>/snap EURUSD</code>)\n" +
+                       "📊 <code>/recap</code> - Generate & send daily performance report\n" +
+                       "⚡ <code>/status</code> - Check Command Center health & connectivity\n" +
+                       "━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+                       "📢 <b>Powered by TeleSnap Pro</b>\n";
+      string errMsg = "";
+      g_telegram.SendMessage(helpMsg, errMsg);
    }
 }
 

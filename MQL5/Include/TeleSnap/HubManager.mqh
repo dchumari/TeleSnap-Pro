@@ -538,8 +538,8 @@ public:
       RenderDashboard();
    }
 
-   //--- Toggle Chart Link State from Dashboard Button Click
-   bool HandleDashboardClick(const string objName)
+   //--- Toggle Chart Link State or Actions from Dashboard Button Click
+   int HandleDashboardClick(const string objName)
    {
       if(StringFind(objName, PrefixDash() + "LinkBtn_") == 0)
       {
@@ -557,7 +557,7 @@ public:
                   RemoveRemoteHUD(targetId);
 
                RenderDashboard();
-               return true;
+               return 1;
             }
          }
       }
@@ -566,10 +566,15 @@ public:
          ObjectSetInteger(m_hubChartId, objName, OBJPROP_STATE, false);
          RefreshCharts(true);
          RenderDashboard();
-         return true;
+         return 1;
+      }
+      else if(objName == PrefixDash() + "Btn_Recap")
+      {
+         ObjectSetInteger(m_hubChartId, objName, OBJPROP_STATE, false);
+         return 2; // Trigger Daily Recap
       }
 
-      return false;
+      return 0;
    }
 
    //--- Render full SaaS visual Command Center on host chart
@@ -665,6 +670,23 @@ public:
       ObjectSetString(m_hubChartId, badge, OBJPROP_FONT, "Segoe UI Semibold");
       ObjectSetInteger(m_hubChartId, badge, OBJPROP_FONTSIZE, 9);
       ObjectSetInteger(m_hubChartId, badge, OBJPROP_SELECTABLE, false);
+
+      // Recap Button
+      string btnRecap = PrefixDash() + "Btn_Recap";
+      ObjectCreate(m_hubChartId, btnRecap, OBJ_BUTTON, 0, 0, 0);
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_CORNER, CORNER_LEFT_UPPER);
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_XDISTANCE, x + width - 275);
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_YDISTANCE, y + 25);
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_XSIZE, 125);
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_YSIZE, 35);
+      ObjectSetString(m_hubChartId, btnRecap, OBJPROP_TEXT, "📊 POST RECAP");
+      ObjectSetString(m_hubChartId, btnRecap, OBJPROP_FONT, "Segoe UI Semibold");
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_FONTSIZE, 9);
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_COLOR, clrWhite);
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_BGCOLOR, C'28,68,52');
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_BORDER_COLOR, clrMediumSeaGreen);
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_SELECTABLE, false);
+      ObjectSetInteger(m_hubChartId, btnRecap, OBJPROP_STATE, false);
 
       // Refresh Button
       string btnRef = PrefixDash() + "Btn_Refresh";

@@ -88,6 +88,7 @@ bool              g_needsReset         = false;
 void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, const string userNote, const TradeSignalInfo &preloadedSignal);
 void ExecuteSnapAndSend(const long targetChartId, const string triggerSource, const string userNote = "");
 void ExecuteSnapAndSend(const string triggerSource, const string userNote = "");
+void PostDailyRecap();
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -241,8 +242,14 @@ void OnChartEvent(const int id,
    {
       if(id == CHARTEVENT_OBJECT_CLICK)
       {
-         if(g_hub.HandleDashboardClick(sparam))
+         int clickRes = g_hub.HandleDashboardClick(sparam);
+         if(clickRes == 1)
             return;
+         else if(clickRes == 2)
+         {
+            PostDailyRecap();
+            return;
+         }
       }
       else if(id == CHARTEVENT_CHART_CHANGE)
       {
@@ -360,6 +367,34 @@ void OnTimer()
          g_ui.ResetState(g_telegram.GetChatId());
       }
       g_needsReset = false;
+   }
+}
+
+//+------------------------------------------------------------------+
+//| Post Daily Performance Recap Card to Telegram                    |
+//+------------------------------------------------------------------+
+void PostDailyRecap()
+{
+   datetime todayStart = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
+   datetime now = TimeCurrent();
+   DailyPerformanceSummary summary;
+   if(g_monitor.GeneratePerformanceRecap(todayStart, now, summary))
+   {
+      string recapMsg = CTradeMonitor::FormatPerformanceRecapHtml(summary, g_telegram.GetChatId(), "TeleSnap");
+      string errMsg = "";
+      bool sent = g_telegram.SendMessage(recapMsg, errMsg);
+      if(sent && InpEnableCommandCenter)
+         g_hub.AddLog("DAILY_RECAP", "📊 Posted Daily Performance Recap to Telegram", 150, true);
+      else if(!sent)
+         PrintFormat("[TeleSnap Lite] ❌ Failed to post daily recap: %s", errMsg);
+   }
+   else
+   {
+      Print("[TeleSnap Lite] ℹ️ No closed deals found today for recap.");
+      string emptyMsg = "📊 <b>DAILY PERFORMANCE RECAP</b>\n📅 Date: <b>" + TimeToString(todayStart, TIME_DATE) + 
+                        "</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━\n<i>No closed trades executed today.</i>\n━━━━━━━━━━━━━━━━━━━━━━━━━\n📢 <b>Powered by TeleSnap Pro</b>\n⚡️ Get TeleSnap on MQL5 Market: <a href=\"https://www.mql5.com/\">mql5.com</a>\n";
+      string errMsg = "";
+      g_telegram.SendMessage(emptyMsg, errMsg);
    }
 }
 

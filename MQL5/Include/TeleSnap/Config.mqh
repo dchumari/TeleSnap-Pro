@@ -69,3 +69,18 @@ struct TradeSignalInfo
    ulong             ticket;
    string            customComment;   // Custom message from on-chart edit box
 };
+
+//--- Performance summary structure for Daily/Weekly recaps
+struct DailyPerformanceSummary
+{
+   datetime          date;
+   int               totalTrades;
+   int               wins;
+   int               losses;
+   int               breakevens;
+   double            winRate;
+   double            netProfit;
+   double            totalPips;
+   double            profitFactor;
+   string            currency;
+};

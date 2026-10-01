@@ -20,16 +20,27 @@ struct SlTrackingEntry
 };
 
 //+------------------------------------------------------------------+
+//| Profit Milestone Tracking Cache Entry                            |
+//+------------------------------------------------------------------+
+struct MilestoneTrackingEntry
+{
+   ulong    posTicket;
+   int      lastMilestonePips;
+   datetime lastAlertTime;
+};
+
+//+------------------------------------------------------------------+
 //| Trade Execution, Position Analytics & SL/TP Event Listener       |
 //+------------------------------------------------------------------+
 class CTradeMonitor
 {
 private:
-   string            m_symbol;
-   ENUM_TIMEFRAMES   m_timeframe;
-   ulong             m_magicFilter;
-   bool              m_allSymbols;
-   SlTrackingEntry   m_slCache[];
+   string                 m_symbol;
+   ENUM_TIMEFRAMES        m_timeframe;
+   ulong                  m_magicFilter;
+   bool                   m_allSymbols;
+   SlTrackingEntry        m_slCache[];
+   MilestoneTrackingEntry m_milestoneCache[];
 
    //--- Calculate pip size for symbol
    double GetPipSize(const string symbol)
@@ -56,10 +67,26 @@ private:
       }
    }
 
+   //--- Remove position from Milestone cache when closed
+   void CleanMilestoneCache(const ulong posId)
+   {
+      for(int i = 0; i < ArraySize(m_milestoneCache); i++)
+      {
+         if(m_milestoneCache[i].posTicket == posId)
+         {
+            for(int j = i; j < ArraySize(m_milestoneCache) - 1; j++)
+               m_milestoneCache[j] = m_milestoneCache[j + 1];
+            ArrayResize(m_milestoneCache, ArraySize(m_milestoneCache) - 1);
+            break;
+         }
+      }
+   }
+
 public:
    CTradeMonitor() : m_magicFilter(0), m_allSymbols(false)
    {
       ArrayResize(m_slCache, 0);
+      ArrayResize(m_milestoneCache, 0);
    }
 
    ~CTradeMonitor() {}
@@ -620,7 +647,10 @@ public:
          outSignal.remainingVolume = remainingVol;
 
          if(!isStillOpen && posId > 0)
+         {
             CleanSlCache(posId);
+            CleanMilestoneCache(posId);
+         }
 
          // Inspect position history to extract original entry price and SL/TP
          double openPrice = 0.0;
@@ -754,5 +784,217 @@ public:
       }
 
       return false;
+   }
+
+   //--- Check for Floating Profit Milestones (e.g. +50, +100, +150, +200 pips)
+   bool CheckProfitMilestones(const int stepPips, TradeSignalInfo &outSignal, string &outEventReason)
+   {
+      if(stepPips <= 0) return false;
+
+      int totalPos = PositionsTotal();
+      for(int i = 0; i < totalPos; i++)
+      {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+
+         string posSymbol = PositionGetString(POSITION_SYMBOL);
+         if(!m_allSymbols && StringCompare(posSymbol, m_symbol, false) != 0)
+            continue;
+
+         if(m_magicFilter > 0 && (ulong)PositionGetInteger(POSITION_MAGIC) != m_magicFilter)
+            continue;
+
+         ENUM_POSITION_TYPE pType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+         double openPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+         double pipSize = GetPipSize(posSymbol);
+         if(pipSize <= 0) continue;
+
+         bool isBuy = (pType == POSITION_TYPE_BUY);
+         double curPrice = SymbolInfoDouble(posSymbol, isBuy ? SYMBOL_BID : SYMBOL_ASK);
+         double floatingPips = isBuy ? (curPrice - openPrice) / pipSize : (openPrice - curPrice) / pipSize;
+
+         if(floatingPips < (double)stepPips) continue;
+
+         int currentMilestone = (int)(floatingPips / stepPips) * stepPips;
+         if(currentMilestone < stepPips) continue;
+
+         // Find in cache
+         int cacheIdx = -1;
+         for(int c = 0; c < ArraySize(m_milestoneCache); c++)
+         {
+            if(m_milestoneCache[c].posTicket == ticket)
+            {
+               cacheIdx = c;
+               break;
+            }
+         }
+
+         if(cacheIdx < 0)
+         {
+            int sz = ArraySize(m_milestoneCache);
+            ArrayResize(m_milestoneCache, sz + 1);
+            m_milestoneCache[sz].posTicket = ticket;
+            m_milestoneCache[sz].lastMilestonePips = 0;
+            m_milestoneCache[sz].lastAlertTime = 0;
+            cacheIdx = sz;
+         }
+
+         // Only trigger if this milestone level has NOT yet been alerted for this ticket
+         if(currentMilestone > m_milestoneCache[cacheIdx].lastMilestonePips)
+         {
+            if(TimeCurrent() - m_milestoneCache[cacheIdx].lastAlertTime < 30)
+               continue;
+
+            outSignal.symbol = posSymbol;
+            outSignal.timeframe = m_timeframe;
+            outSignal.status = "PROFIT_MILESTONE";
+            outSignal.orderType = isBuy ? "BUY (MILESTONE)" : "SELL (MILESTONE)";
+            outSignal.ticket = ticket;
+            outSignal.volume = PositionGetDouble(POSITION_VOLUME);
+            outSignal.closedVolume = 0;
+            outSignal.remainingVolume = outSignal.volume;
+            outSignal.entryPrice = openPrice;
+            outSignal.currentPrice = curPrice;
+            outSignal.stopLoss = PositionGetDouble(POSITION_SL);
+            outSignal.takeProfit = PositionGetDouble(POSITION_TP);
+            outSignal.floatingPnL = PositionGetDouble(POSITION_PROFIT);
+            outSignal.floatingPips = floatingPips;
+            outSignal.currency = AccountInfoString(ACCOUNT_CURRENCY);
+            outSignal.signalTime = TimeCurrent();
+            outSignal.posCount = 1;
+
+            double point = SymbolInfoDouble(posSymbol, SYMBOL_POINT);
+            long spreadPts = SymbolInfoInteger(posSymbol, SYMBOL_SPREAD);
+            outSignal.spreadPips = (pipSize > 0) ? (spreadPts * point) / pipSize : 0;
+
+            string pnlText = (outSignal.floatingPnL >= 0) ? ("+$" + DoubleToString(outSignal.floatingPnL, 2)) : ("-$" + DoubleToString(MathAbs(outSignal.floatingPnL), 2));
+            outSignal.customComment = "🎯 Profit Milestone Reached! Trade secured +" + IntegerToString(currentMilestone) + 
+                                      " Pips (" + pnlText + " " + outSignal.currency + ")!";
+            outEventReason = "PROFIT_MILESTONE";
+
+            m_milestoneCache[cacheIdx].lastMilestonePips = currentMilestone;
+            m_milestoneCache[cacheIdx].lastAlertTime = TimeCurrent();
+            return true;
+         }
+      }
+
+      return false;
+   }
+
+   //--- Generate Performance Recap for a time window (e.g. Daily / Weekly)
+   bool GeneratePerformanceRecap(const datetime startTime, const datetime endTime, DailyPerformanceSummary &outSummary)
+   {
+      ZeroMemory(outSummary);
+      outSummary.date = startTime;
+      outSummary.currency = AccountInfoString(ACCOUNT_CURRENCY);
+
+      if(!HistorySelect(startTime, endTime))
+         return false;
+
+      int dealsTotal = HistoryDealsTotal();
+      double grossProfit = 0.0;
+      double grossLoss = 0.0;
+      double totalPipsSum = 0.0;
+
+      for(int i = 0; i < dealsTotal; i++)
+      {
+         ulong ticket = HistoryDealGetTicket(i);
+         if(ticket == 0) continue;
+
+         if(m_magicFilter > 0 && (ulong)HistoryDealGetInteger(ticket, DEAL_MAGIC) != m_magicFilter)
+            continue;
+
+         ENUM_DEAL_ENTRY entry = (ENUM_DEAL_ENTRY)HistoryDealGetInteger(ticket, DEAL_ENTRY);
+         if(entry != DEAL_ENTRY_OUT && entry != DEAL_ENTRY_OUT_BY && entry != DEAL_ENTRY_INOUT)
+            continue;
+
+         string symbol = HistoryDealGetString(ticket, DEAL_SYMBOL);
+         double profit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
+         double closePrice = HistoryDealGetDouble(ticket, DEAL_PRICE);
+         ulong posId = HistoryDealGetInteger(ticket, DEAL_POSITION_ID);
+         ENUM_DEAL_TYPE dType = (ENUM_DEAL_TYPE)HistoryDealGetInteger(ticket, DEAL_TYPE);
+         bool posWasBuy = (dType == DEAL_TYPE_SELL);
+
+         double pipSize = GetPipSize(symbol);
+         double openPrice = 0.0;
+
+         if(posId > 0 && HistorySelectByPosition(posId))
+         {
+            int pDeals = HistoryDealsTotal();
+            for(int p = 0; p < pDeals; p++)
+            {
+               ulong pTicket = HistoryDealGetTicket(p);
+               if(HistoryDealGetInteger(pTicket, DEAL_ENTRY) == DEAL_ENTRY_IN)
+               {
+                  openPrice = HistoryDealGetDouble(pTicket, DEAL_PRICE);
+                  break;
+               }
+            }
+            HistorySelect(startTime, endTime);
+         }
+
+         double pips = 0.0;
+         if(pipSize > 0 && openPrice > 0)
+         {
+            pips = posWasBuy ? (closePrice - openPrice) / pipSize : (openPrice - closePrice) / pipSize;
+         }
+
+         outSummary.totalTrades++;
+         outSummary.netProfit += profit;
+         totalPipsSum += pips;
+
+         if(profit > 0.05)
+         {
+            outSummary.wins++;
+            grossProfit += profit;
+         }
+         else if(profit < -0.05)
+         {
+            outSummary.losses++;
+            grossLoss += MathAbs(profit);
+         }
+         else
+         {
+            outSummary.breakevens++;
+         }
+      }
+
+      outSummary.totalPips = totalPipsSum;
+      outSummary.winRate = (outSummary.totalTrades > 0) ? ((double)outSummary.wins * 100.0 / (double)outSummary.totalTrades) : 0.0;
+      outSummary.profitFactor = (grossLoss > 0.001) ? (grossProfit / grossLoss) : (grossProfit > 0 ? 99.9 : 0.0);
+
+      return (outSummary.totalTrades > 0);
+   }
+
+   //--- Format Performance Recap as an institutional HTML Telegram message
+   static string FormatPerformanceRecapHtml(const DailyPerformanceSummary &summary, const string botUser, const string supportBot)
+   {
+      string dateStr = TimeToString(summary.date, TIME_DATE);
+      string pnlSign = (summary.netProfit >= 0) ? "+" : "-";
+      string pnlColor = (summary.netProfit >= 0) ? "🟢" : "🔴";
+      string pipsSign = (summary.totalPips >= 0) ? "+" : "";
+
+      string text = "";
+      text += "📊 <b>DAILY PERFORMANCE RECAP</b>\n";
+      text += "📅 Date: <b>" + dateStr + "</b>\n";
+      text += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+      text += "🎯 Total Trades Closed: <b>" + IntegerToString(summary.totalTrades) + "</b>\n";
+      text += "✅ Wins: <b>" + IntegerToString(summary.wins) + "</b> | ";
+      text += "❌ Losses: <b>" + IntegerToString(summary.losses) + "</b> | ";
+      text += "⚖️ Breakeven: <b>" + IntegerToString(summary.breakevens) + "</b>\n";
+      text += "🏆 Win Rate: <b>" + DoubleToString(summary.winRate, 1) + "%</b>\n";
+      text += "📈 Profit Factor: <b>" + DoubleToString(summary.profitFactor, 2) + "</b>\n";
+      text += "─────────────────────────\n";
+      text += pnlColor + " Net Realized PnL: <b>" + pnlSign + "$" + DoubleToString(MathAbs(summary.netProfit), 2) + " " + summary.currency + "</b>\n";
+      text += "📏 Total Pips Secured: <b>" + pipsSign + DoubleToString(summary.totalPips, 1) + " pips</b>\n";
+      text += "─────────────────────────\n";
+      text += "💬 <i>Automated institutional trade summary generated by TeleSnap Hub.</i>\n";
+      text += "━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+      text += "📢 <b>Powered by TeleSnap Pro</b>\n";
+      if(StringLen(supportBot) > 0)
+         text += "⚡️ Customer Support: @" + supportBot + "\n";
+      text += "🌐 Get TeleSnap on MQL5 Market: <a href=\"https://www.mql5.com/\">mql5.com</a>\n";
+
+      return text;
    }
 };
