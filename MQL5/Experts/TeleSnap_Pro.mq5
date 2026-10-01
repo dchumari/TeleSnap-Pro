@@ -45,7 +45,7 @@ input group "=== 🎯 Profit Milestones & Daily Recap ==="
 input int                    InpMilestoneStepPips = 50;                  // Auto-Snap on Floating Profit Milestones (pips, 0=Disabled)
 input bool                   InpEnableDailyRecap  = true;                // Enable End-of-Day Performance Recap
 input int                    InpDailyRecapHour    = 23;                  // Broker Hour to Post Daily Recap (0-23)
-input string                 InpSupportBot        = "TeleSnap";          // Telegram Customer Support Handle (e.g. TeleSnap)
+input string                 InpSupportBot        = "telesnap_pro_bot";  // Telegram Customer Support & Inquiry Bot (@telesnap_pro_bot)
 input bool                   InpEnableInboundCmds = true;                // Listen to Telegram Inbound Commands (/snap, /recap, /status)
 
 input group "=== 📸 Capture & Image Settings ==="

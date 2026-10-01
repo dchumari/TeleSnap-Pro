@@ -369,6 +369,7 @@ public:
       if(m_isLiteMode)
       {
          caption += "📢 <b>Powered by TeleSnap Pro</b>\n";
+         caption += "💎 <b>Help & Inquiries:</b> @telesnap_pro_bot\n";
          caption += "⚡ <i>Get TeleSnap on MQL5 Market: <a href=\"https://www.mql5.com\">mql5.com</a></i>";
       }
       else

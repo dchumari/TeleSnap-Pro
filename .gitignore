@@ -10,7 +10,11 @@
 *.cache
 
 # Secrets & Configuration
+.env
 *.env
+.env.*
+!.env.example
+customer_inquiries.log
 credentials.json
 bot_token.txt
 secret_config.ini
@@ -21,6 +25,10 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
+
+# Python & Caches
+__pycache__/
+*.pyc
 
 # IDEs
 .vscode/
