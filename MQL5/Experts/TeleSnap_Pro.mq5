@@ -114,6 +114,14 @@ void HandleInboundCommand(const string cmd, const string param, const string sen
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   // Strategy Tester validation initialization (Reset state per validation pass)
+   if(MQLInfoInteger(MQL_TESTER))
+   {
+      g_testerTradeOpened = false;
+      g_testerTradeClosed = false;
+      g_testerTickCounter = 0;
+   }
+
    Print("=================================================");
    Print("⚡ Initializing TeleSnap Pro v2.00 (Command Center Hub)");
    Print("=================================================");
@@ -354,7 +362,7 @@ void SimulateTesterValidationTrade()
    if(!g_testerTradeOpened)
    {
       ENUM_SYMBOL_TRADE_MODE tradeMode = (ENUM_SYMBOL_TRADE_MODE)SymbolInfoInteger(_Symbol, SYMBOL_TRADE_MODE);
-      if(tradeMode != SYMBOL_TRADE_MODE_FULL)
+      if(tradeMode == SYMBOL_TRADE_MODE_DISABLED || tradeMode == SYMBOL_TRADE_MODE_CLOSEONLY)
          return;
 
       double minLot  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
@@ -378,6 +386,8 @@ void SimulateTesterValidationTrade()
       if(AccountInfoDouble(ACCOUNT_MARGIN_FREE) <= requiredMargin)
          return;
 
+      // Adapt filling mode and slippage to broker symbol configuration
+      g_testerTrade.SetTypeFillingBySymbol(_Symbol);
       g_testerTrade.SetDeviationInPoints(30);
       if(g_testerTrade.Buy(volume, _Symbol, ask, 0.0, 0.0, "TeleSnap Tester Validation"))
       {
@@ -390,7 +400,17 @@ void SimulateTesterValidationTrade()
       g_testerTickCounter++;
       if(g_testerTickCounter >= 5)
       {
-         if(g_testerTrade.PositionClose(_Symbol))
+         bool anyClosed = false;
+         for(int i = PositionsTotal() - 1; i >= 0; i--)
+         {
+            ulong ticket = PositionGetTicket(i);
+            if(ticket > 0)
+            {
+               if(g_testerTrade.PositionClose(ticket))
+                  anyClosed = true;
+            }
+         }
+         if(anyClosed || PositionsTotal() == 0)
          {
             g_testerTradeClosed = true;
          }
