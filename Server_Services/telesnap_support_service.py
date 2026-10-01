@@ -53,6 +53,12 @@ if not BOT_TOKEN:
 API_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 INQUIRY_LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "customer_inquiries.log")
 
+# Official MQL5 Market & GitHub Links
+MQL5_FREE_URL = "https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap"
+MQL5_PRO_URL  = "https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap"
+MQL5_ALL_URL  = "https://www.mql5.com/en/market/mt5/utility?filter=telesnap"
+GITHUB_RELEASES_URL = "https://github.com/dchumari/TeleSnap-Pro/releases"
+
 def call_telegram_api(method, params=None):
     url = f"{API_URL}/{method}"
     headers = {"Content-Type": "application/json"}
@@ -88,7 +94,11 @@ def get_main_menu_keyboard():
                 {"text": "📥 Download Free Lite", "callback_data": "menu_download"}
             ],
             [
-                {"text": "🛒 Buy on MQL5 Market", "url": "https://www.mql5.com/en/market"},
+                {"text": "👑 Buy TeleSnap Pro (MT5)", "url": MQL5_PRO_URL},
+                {"text": "🎁 Get Free Lite (MT5)", "url": MQL5_FREE_URL}
+            ],
+            [
+                {"text": "🌐 Browse All on MQL5", "url": MQL5_ALL_URL},
                 {"text": "💬 Talk to Support", "callback_data": "menu_support"}
             ]
         ]
@@ -114,15 +124,17 @@ def format_pricing_message():
         "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         "Choose the plan that fits your trading journey:\n\n"
         "🟢 <b>1-Month Starter License:</b>\n"
-        "• <b>$29.00 USD / month</b>\n"
+        "• <b>$35.00 USD / month</b>\n"
         "• Full access to Command Center & all updates\n\n"
         "🔵 <b>3-Month Trader License:</b>\n"
-        "• <b>$59.00 USD / quarter</b> (Save 32%)\n"
+        "• <b>$79.00 USD / quarter</b>\n"
         "• Recommended for active community signal providers\n\n"
         "🔥 <b>Unlimited Lifetime License:</b>\n"
-        "• <b>$79.00 USD (Launch Special)</b>\n"
+        "• <b>$99.00 USD (Best Value)</b>\n"
         "• One-time payment, perpetual updates, 10 MT5 terminal activations!\n\n"
         "━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"👑 <b>Direct Purchase Link:</b>\n👉 <a href=\"{MQL5_PRO_URL}\">Buy TeleSnap Pro on MQL5 Market</a>\n\n"
+        f"🎁 <b>Free Community Version:</b>\n👉 <a href=\"{MQL5_FREE_URL}\">Get Free Lite on MQL5 Market</a>\n\n"
         "🛡️ <i>All licenses are protected & delivered instantly via MetaQuotes MQL5 Market.</i>"
     )
 
@@ -211,10 +223,15 @@ def handle_callback_query(callback):
         send_message(chat_id, format_setup_message(), get_main_menu_keyboard())
     elif data == "menu_download":
         download_text = (
-            "📥 <b>Download TeleSnap Lite (Free Community Edition)</b>\n\n"
-            "You can download the ready-to-install standalone package directly from our GitHub release:\n"
-            "👉 <b>GitHub Package:</b> https://github.com/dchumari/TeleSnap-Pro/releases\n\n"
-            "Includes <code>TeleSnap_Lite.ex5</code> and the step-by-step PDF manual."
+            "📥 <b>Download TeleSnap (Free Edition)</b>\n\n"
+            "Choose your preferred download method:\n\n"
+            "1️⃣ <b>MetaTrader 5 Market (1-Click Terminal Install):</b>\n"
+            f"👉 <a href=\"{MQL5_FREE_URL}\">Get Free Lite on MQL5 Market</a>\n\n"
+            "2️⃣ <b>GitHub Official Release (Standalone .ex5 + Suite):</b>\n"
+            f"👉 <a href=\"{GITHUB_RELEASES_URL}\">Download from GitHub Releases</a>\n\n"
+            "3️⃣ <b>Need Custom Branding & Command Center?</b>\n"
+            f"👉 <a href=\"{MQL5_PRO_URL}\">Upgrade to TeleSnap Pro ($99)</a>\n\n"
+            "Includes <code>TeleSnap_Lite.ex5</code>, setup guides, and complete manual."
         )
         send_message(chat_id, download_text, get_main_menu_keyboard())
     elif data == "menu_support":

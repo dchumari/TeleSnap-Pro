@@ -1,6 +1,7 @@
-# Compiled binaries
+# Compiled binaries & archives
 *.ex5
 *.ex4
+*.zip
 
 # MetaEditor files
 *.log

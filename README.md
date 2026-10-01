@@ -1,188 +1,159 @@
-# ⚡ TeleSnap Pro: High-Speed MetaTrader to Telegram Signal Snapper
+# ⚡ TeleSnap: High-Speed MetaTrader 5 (MT5) to Telegram Signal Dispatcher & Multi-Chart Command Center
 
 <div align="center">
 
-[![Platform](https://img.shields.io/badge/Platform-MetaTrader%205%20%7C%20MetaTrader%204-007acc.svg?logo=windows&logoColor=white)](#)
-[![Language](https://img.shields.io/badge/Language-MQL5%20%2F%20MQL4-brightgreen.svg)](#)
-[![Telegram API](https://img.shields.io/badge/Telegram-Bot%20API%20v7.0+-0088cc.svg?logo=telegram&logoColor=white)](https://core.telegram.org/bots/api)
-[![DLL Free](https://img.shields.io/badge/Security-100%25%20DLL--Free-success.svg)](#)
-[![Market Ready](https://img.shields.io/badge/MQL5%20Market-Validation%20Ready-orange.svg)](https://www.mql5.com)
-[![License](https://img.shields.io/badge/License-Proprietary%20%2F%20Commercial-blue.svg)](#)
+[![MQL5 Market Pro](https://img.shields.io/badge/MQL5%20Market-TeleSnap%20Pro%20($99)-FF9900.svg?logo=metatrader5&logoColor=white)](https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
+[![MQL5 Market Free](https://img.shields.io/badge/MQL5%20Market-TeleSnap%20Free%20Lite-brightgreen.svg?logo=metatrader5&logoColor=white)](https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
+[![GitHub Release](https://img.shields.io/github/v/release/dchumari/TeleSnap-Pro?color=blue&logo=github)](https://github.com/dchumari/TeleSnap-Pro/releases/tag/v2.0.0)
+[![Telegram Support Bot](https://img.shields.io/badge/Telegram-@telesnap__pro__bot-0088cc.svg?logo=telegram&logoColor=white)](https://t.me/telesnap_pro_bot)
+[![Security](https://img.shields.io/badge/Security-100%25%20Native%20Zero--DLL-success.svg)](#)
+[![Platform](https://img.shields.io/badge/Platform-MetaTrader%205%20(MT5)-007acc.svg)](#)
 
-**Transform your chart analysis into watermarked, high-converting Telegram signals in under 300 milliseconds.**
+**Instant MetaTrader 5 to Telegram signal broadcasting, automated HD chart screenshot capture, and centralized multi-chart command center in under 300 milliseconds. 100% Native MQL5 WebRequest with strictly ZERO DLLs.**
 
-[Features](#-key-features) • [Architecture](#-architecture) • [Quick Start](#-quick-start) • [Marketplace Strategy](#-monetization--market-strategy) • [Roadmap](#-roadmap)
+[🎁 Get Free on MQL5](https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap) • [👑 Buy Pro Edition ($99)](https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap) • [📦 Download v2.0.0 (.ex5)](https://github.com/dchumari/TeleSnap-Pro/releases/tag/v2.0.0) • [🤖 Telegram Bot Support](https://t.me/telesnap_pro_bot)
 
 </div>
 
 ---
 
-## 🎯 The Urgent Problem TeleSnap Solves
+## 🚀 Overview: The Ultimate MT5 to Telegram Broadcaster
 
-Every single day, tens of thousands of Telegram signal providers, prop-firm traders, and trading mentors face the same friction:
-1. **The 60-Second Delay:** When a high-probability setup triggers, the trader must open Snipping Tool / Lightshot, crop the chart, save the image, open Telegram, drag the image, type Symbol, Entry, Stop Loss, and Take Profit. By the time subscribers see the message, the price has slipped 5–15 pips.
-2. **Signal Theft & Copycats:** Without fast, automated watermarking, rival channels steal and repost clean chart screenshots as their own.
-3. **Amateur Branding:** Manually typed messages look unpolished and lack key analytics like Risk-to-Reward (R:R) ratio, pip distance, and timeframe context.
+**TeleSnap** is an institutional-grade MetaTrader 5 trade communication hub and automated signal dispatcher. It bridges your MT5 terminal directly to your Telegram channels, VIP supergroups, private chats, and forum topics with **zero human latency (<300ms)**.
 
-**TeleSnap Pro solves this permanently:** One click on a sleek floating chart button (or pressing `F12`) instantly renders the chart, stamps your VIP branding, calculates risk metrics, and dispatches a high-resolution photo with formatted Telegram markdown directly to your channel in **under 300ms**.
+Whether you trade **Forex, Gold (XAUUSD), Crypto, Indices (US30, NAS100, DAX40), or Commodities**, TeleSnap eliminates the painful friction of manual chart cropping, typing trade levels, and dealing with signal copycats.
+
+### 🎯 The Problem TeleSnap Solves:
+1. **The 60-Second Manual Delay:** Cropping charts with Snipping Tool, saving files, and manually typing entry/SL/TP costs 5–15 pips of slippage for your subscribers. TeleSnap captures, formats, and delivers everything in **under 300 milliseconds**.
+2. **Signal Theft & Copycats:** Rival Telegram channels steal clean chart images. TeleSnap dynamically embeds your channel handle, VIP watermark, and risk analytics directly onto the screenshot.
+3. **Multi-Chart Chaos:** Traditional utilities require attaching an EA to every single open window. TeleSnap Pro's **Centralized Command Center** monitors and controls all your trading charts from one single master dashboard.
 
 ---
 
 ## 🌟 Key Features
 
-### 1. ⚡ 1-Click Floating Chart HUD & Hotkey (`F12`)
-- Draggable on-chart button with real-time status indicators (Ready / Sending / Sent).
-- Global keyboard hotkey trigger (`F12`) for zero-mouse latency.
-- Instant feedback via chart notifications or discreet sound cues.
+### ⚡ Sub-300ms Native High-Speed Networking
+* Built entirely with **100% native MQL5 WebRequest** and RFC 7578 multipart/form-data encoding.
+* **Strictly ZERO DLLs** — 100% compliant with MQL5 Market security standards, prop firm rules, and cloud Windows VPS hosting.
 
-### 2. 🛡️ 100% DLL-Free Native WebRequest Engine
-- Built entirely on native MQL5 `WebRequest()` and RFC 7578 multipart/form-data encoding.
-- **Passes MQL5 Marketplace automated validation** with zero DLL warnings or security alerts.
-- Works smoothly on Windows VPS and local workstations alike.
+### 🖥️ Centralized Multi-Chart Command Center (Pro)
+* Attach TeleSnap to just **one host chart**, and it dynamically scans, links, and monitors all open trading charts in your terminal.
+* Injects interactive remote `[SNAP]` buttons onto linked asset windows.
 
-### 3. 🏷️ Intelligent Watermark & Branding Overlay
-- Automatic channel handle watermark (`@YourVIPChannel`) positioned dynamically to never obscure candlesticks.
-- Trade metadata header stamped directly onto the image:
-  - Symbol & Timeframe (e.g., `EURUSD • M15`)
-  - Order Type & Entry Price
-  - Stop Loss & Take Profit with pip distance
-  - Calculated Risk-to-Reward ratio (e.g., `R:R = 1:3.2`)
+### 📸 Real-Time Automatic Trade Snapping
+* **On Trade Entry:** Captures and dispatches the exact chart setup at execution.
+* **On Take Profit / Stop Loss:** Instantly publishes verified trade outcome screenshots ("+45 Pips Secured ✅").
+* **On Trailing Stop / Breakeven:** Broadcasts risk-free trade protection updates to your community.
 
-### 4. 🤖 Automated Trade-Event Snapping (Hands-Free Mode)
-- **OnTradeOpen:** Automatically snaps and posts when an order is executed.
-- **OnSLHit / OnTPHit:** Dispatches immediate trade outcome verification screenshots ("Trade Closed: +45 Pips ✅").
-- Builds undeniable proof-of-work credibility for your Telegram subscribers.
+### 🎯 Floating Profit Milestones (Pro)
+* Automatically snaps and shares proof-of-profit screenshots whenever a trade gains **+25, +50, +100 pips** or custom intervals.
 
-### 5. 🧩 Multi-Timeframe Montage Engine (Pro Edition)
-- Optional 3-in-1 multi-timeframe collage generator:
-  - Macro Bias (`H4`)
-  - Market Structure (`H1`)
-  - Precise Entry (`M15` or `M5`)
-- Merges all three charts into a single ultra-clean montage image before sending.
+### 📊 Automated End-of-Day Daily Performance Recap (Pro)
+* Audits your daily closed deals and delivers an institutional summary report:
+  * Net Daily PnL ($ and %)
+  * Total Trades, Win Rate %, Profit Factor
+  * Long vs. Short accuracy breakdown
+  * Top Winning & Losing Assets
 
----
+### 🏷️ Dynamic Branding & Smart Watermarking
+* Automatically stamps your `@YourChannelHandle` and VIP invite link without obscuring candlesticks.
+* Rich trade analytics header: Symbol, Timeframe, Direction, Entry, SL, TP, Pips Distance, and Risk:Reward (R:R) ratio.
 
-## 🏗️ Architecture
-
-```mermaid
-flowchart TD
-    subgraph Triggers["Input Triggers"]
-        T1["Floating HUD [SNAP] Button"]
-        T2["Keyboard Hotkey (F12)"]
-        T3["OnTradeTransaction Event<br/>(Order Placed / SL / TP Hit)"]
-    end
-
-    subgraph CoreEngine["TeleSnap Pro MQL5 Core"]
-        Capture["ChartCapture::CaptureCurrentChart()<br/>ChartScreenShot() Native High-Res"]
-        Overlay["Watermark::ApplyBranding()<br/>Calculate R:R, Pips & Header"]
-        MultiTF{"Multi-TF Montage Enabled?"}
-        Collage["MultiTF::GenerateCollage()<br/>H4 + H1 + M15 Montage"]
-        Multipart["Telegram::BuildMultipartPayload()<br/>RFC 7578 Boundary Builder"]
-    end
-
-    subgraph Network["MetaTrader Network Layer"]
-        WebRequest["WebRequest('POST', api.telegram.org)<br/>bot<TOKEN>/sendPhoto"]
-    end
-
-    subgraph Output["Target Destinations"]
-        VIP["Telegram VIP Signal Channel"]
-        Free["Telegram Free / Discussion Group"]
-        Logs["MT5 Expert Logs & Audit Trail"]
-    end
-
-    T1 --> Capture
-    T2 --> Capture
-    T3 --> Capture
-    Capture --> Overlay
-    Overlay --> MultiTF
-    MultiTF -->|Yes| Collage
-    MultiTF -->|No| Multipart
-    Collage --> Multipart
-    Multipart --> WebRequest
-    WebRequest --> VIP
-    WebRequest --> Free
-    WebRequest --> Logs
-```
+### 🤖 24/7 Automated Telegram Support Service
+* Integrates directly with our 24/7 background customer support bot: **[@telesnap_pro_bot](https://t.me/telesnap_pro_bot)** for real-time setup guidance, license management, and command querying.
 
 ---
 
-## 📁 Repository Structure
+## 🏆 Edition Comparison: Free Lite vs. Commercial Pro
 
-```text
-TeleSnap-Pro/
-├── MQL5/
-│   ├── Experts/
-│   │   └── TeleSnap_Pro.mq5          # Primary Expert Advisor & User Entry Point
-│   └── Include/
-│       └── TeleSnap/
-│           ├── Config.mqh             # Configuration parameters & Enums
-│           ├── Telegram.mqh           # Native multipart/form-data WebRequest client
-│           ├── ChartCapture.mqh       # High-res screen capture & dimension handlers
-│           ├── Watermark.mqh          # On-chart branding & trade metrics overlay
-│           ├── UI.mqh                 # Draggable floating HUD button & controls
-│           └── TradeMonitor.mqh       # Event listener for auto-snapping on trade events
-├── docs/
-│   ├── BRAINSTORMING_AND_ROADMAP.md   # Deep monetization strategy, roadmap & specs
-│   ├── MQL5_MARKET_LISTING.md         # High-converting product sales copy & screenshots guide
-│   └── USER_MANUAL.md                 # Complete buyer setup guide (Bot token, WebRequest URL)
-├── scripts/
-│   └── deploy_to_mt5.bat              # Auto-detects MT5 terminal and symlinks/deploys files
-├── .gitignore                         # Excludes compiled .ex5, caches and credentials
-└── README.md                          # Repository overview and documentation
-```
+| Feature | 🎁 TeleSnap Lite (Free) | 👑 TeleSnap Pro (Commercial) |
+| :--- | :---: | :---: |
+| **Price** | **100% FREE** | **$99.00 USD (Lifetime)** |
+| **Marketplace Link** | [MQL5 Product #198951](https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap) | [MQL5 Product #198931](https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap) |
+| **Snapping Speed** | ⚡ Under 300ms | ⚡ Under 300ms |
+| **Telegram Signal Dispatching** | ✅ Included | ✅ Included |
+| **On-Chart Floating HUD ([SNAP])** | ✅ Included | ✅ Included |
+| **Auto Entry / SL / TP Snaps** | ✅ Included | ✅ Included |
+| **Multi-Chart Command Center** | Standard Hub | 👑 Interactive Matrix Dashboard |
+| **Profit Milestones (+50 / +100 Pips)** | ❌ Disabled | 👑 Automated Multi-Stage Snapping |
+| **End-of-Day Daily Recap** | ❌ Disabled | 👑 Full Win Rate & PnL Audit |
+| **Custom Channel Watermarking** | Fixed Community Badge | 👑 100% Custom Handle & VIP Links |
+| **2-Way Remote Inbound Bot Commands** | ❌ Disabled | 👑 Remote `/snap`, `/recap`, `/status` |
+| **Terminal Activations** | Unlimited | 10 Activations |
 
 ---
 
-## 🚀 Quick Start
+## 📥 Installation & Quick Start
 
-### 1. Telegram Bot Setup (2 Minutes)
-1. Message [`@BotFather`](https://t.me/BotFather) on Telegram and send `/newbot`.
-2. Copy your **Bot API Token** (e.g., `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`).
-3. Add your bot to your target Telegram Channel or Group as an **Administrator** with permission to post messages.
-4. Obtain your channel ID or username (e.g. `@MyForexSignals` or `-1001234567890`).
+### Method 1: 1-Click Install via MetaTrader 5 Market (Recommended)
+1. Open your **MetaTrader 5 Terminal**.
+2. Go to the **Market** tab at the bottom of the platform.
+3. Search for **`TeleSnap`**.
+4. Click **Download** (for Free Lite) or **Buy** (for Pro) — it installs automatically into your `Navigator >> Experts >> Market` folder!
 
-### 2. MetaTrader 5 Configuration
-In MetaTrader 5, allow WebRequests to the Telegram API:
-1. Open **Tools** → **Options** (`Ctrl + O`) → **Expert Advisors** tab.
-2. Check **Allow WebRequest for listed URL**.
-3. Add: `https://api.telegram.org`
+### Method 2: Standalone Binary (.ex5) via GitHub Releases
+1. Download **[`TeleSnap_Lite.ex5`](https://github.com/dchumari/TeleSnap-Pro/releases/tag/v2.0.0)** or the full **[`TeleSnap-Suite-v2.0.zip`](https://github.com/dchumari/TeleSnap-Pro/releases/tag/v2.0.0)** from our official releases page.
+2. In MT5, click **File >> Open Data Folder**.
+3. Navigate to `MQL5/Experts/` and drop `TeleSnap_Lite.ex5` into the folder.
+4. Right-click **Expert Advisors** in the Navigator panel and click **Refresh**.
+
+---
+
+## ⚙️ 2-Minute Setup Guide
+
+### Step 1: Whitelist Telegram API in MT5
+1. In MetaTrader 5, press `Ctrl + O` (or go to **Tools >> Options >> Expert Advisors**).
+2. Check the box **"Allow WebRequest for listed URL"**.
+3. Click the green `+` and add:
+   ```text
+   https://api.telegram.org
+   ```
 4. Click **OK**.
 
-### 3. Deploy & Attach
-1. Run `scripts\deploy_to_mt5.bat` or copy `MQL5/` contents directly to your MetaTrader 5 `MQL5` directory.
-2. In MetaEditor, press `F7` on `TeleSnap_Pro.mq5` to compile.
-3. Drag `TeleSnap_Pro` from the MT5 Navigator onto any active chart.
-4. Input your **Bot Token** and **Chat ID** in the inputs dialogue.
-5. Click the on-chart **[ 📸 SNAP & SEND ]** button or press **`F12`**!
+### Step 2: Create Your Telegram Bot
+1. Open Telegram and search for **[@BotFather](https://t.me/BotFather)**.
+2. Send `/newbot` and follow the prompts to get your **Bot API Token** (e.g. `7123456789:AAF...`).
+3. Add your new bot as an **Administrator** with "Post Messages" permission in your destination Telegram channel or group.
+
+### Step 3: Attach TeleSnap
+1. Drag **TeleSnap** onto any chart window in MT5.
+2. In the Inputs tab:
+   * **InpBotToken:** Paste your Bot Token.
+   * **InpChatId:** Enter your Channel ID or username (e.g., `@YourChannel` or `-1001234567890`).
+3. Click **OK**. TeleSnap will test connectivity and display `✅ TELEGRAM CONNECTED!` on your chart.
+4. Your credentials are saved encrypted locally — all other chart windows auto-load them seamlessly!
 
 ---
 
-## 💰 Monetization & Market Strategy
+## 🤖 24/7 Automated Support Bot
 
-TeleSnap Pro is architected around a 3-tier monetization model designed for immediate cashflow:
-
-| Tier | Distribution Channel | Pricing | Value Proposition |
-| :--- | :--- | :--- | :--- |
-| **Free Lite** | MQL5 Market Free Section | **Free** | Core manual snap with fixed watermark: `Powered by TeleSnap Pro`. Turns every signal provider into a viral billboard. |
-| **TeleSnap Pro** | MQL5 Market Paid Section | **$49 – $79** One-Time | Full customization, custom watermarks, multi-timeframe collage, auto-trade snapping, unlimited channels. |
-| **White-Label Agency** | Direct B2B / Telegram Mentors | **$250 – $500** Setup | Custom proprietary branding, exclusive indicator overlays, and dedicated signal formatting for large trading groups (5k–50k members). |
+Need help with setup, licensing inquiries, or command syntax? Our dedicated automated assistant is online 24/7:
+* **Telegram Bot:** [@telesnap_pro_bot](https://t.me/telesnap_pro_bot)
+* **Supported Commands:** `/start`, `/setup`, `/pricing`, `/help`
 
 ---
 
-## 🗺️ Roadmap
+## 🛡️ Security, Safety & Prop-Firm Compliance
 
-- [x] Architecture design & native MQL5 multipart WebRequest specification
-- [x] Project workspace initialization & documentation
-- [ ] Core MQL5 Expert Advisor implementation (`TeleSnap_Pro.mq5`)
-- [ ] Native Telegram multipart uploader (`Telegram.mqh`)
-- [ ] On-chart floating HUD & draggable button UI (`UI.mqh`)
-- [ ] Automated trade execution listener (`TradeMonitor.mqh`)
-- [ ] Multi-timeframe collage engine (`ChartCapture.mqh`)
-- [ ] MQL5 Marketplace compliance audit and compilation verification
-- [ ] MT4 backward compatibility bridge (`MQL4/`)
+* **Zero DLL Imports:** Uses strictly native MQL5 networking code. No DLL execution required or used.
+* **Zero Speculative Trading:** TeleSnap does **not** open independent market orders on real accounts. It exclusively monitors your trades, captures charts, and broadcasts alerts.
+* **Prop-Firm Safe:** Fully compatible with FTMO, FundedNext, The Funded Trader, Topstep, and all major prop firms allowing trade copiers and notification utilities.
+* **Low CPU Footprint:** Built on an event-driven timer and trade transaction hooks for zero terminal freezing or CPU throttling.
+
+---
+
+## 🌐 Official Links
+
+* 👑 **TeleSnap Pro on MQL5 Market:** [https://www.mql5.com/en/market/product/198931](https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
+* 🎁 **TeleSnap Free on MQL5 Market:** [https://www.mql5.com/en/market/product/198951](https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
+* 🔍 **Browse TeleSnap MT5 Utilities:** [https://www.mql5.com/en/market/mt5/utility?filter=telesnap](https://www.mql5.com/en/market/mt5/utility?filter=telesnap)
+* 📦 **GitHub Releases & Downloads:** [https://github.com/dchumari/TeleSnap-Pro/releases](https://github.com/dchumari/TeleSnap-Pro/releases)
+* 🤖 **Customer Support Bot:** [@telesnap_pro_bot](https://t.me/telesnap_pro_bot)
 
 ---
 
 ## 📄 License
 
-Proprietary Commercial Software. All rights reserved. Open-source core components provided under the [MIT License](LICENSE).
+This repository is maintained by Derrick Chumari. TeleSnap Lite is available as a free community utility. TeleSnap Pro is protected under commercial copyright and distributed via MetaQuotes MQL5 Market.
+
+Copyright © 2026 Derrick Chumari. All Rights Reserved.
