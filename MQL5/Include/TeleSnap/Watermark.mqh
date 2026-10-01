@@ -50,8 +50,8 @@ public:
       m_isLiteMode = isLite;
       if(m_isLiteMode)
       {
-         m_channelTag = "Powered by TeleSnap Pro - Get on MQL5";
-         m_vipInviteLink = "https://www.mql5.com";
+         m_channelTag = "@telesnap_pro_bot";
+         m_vipInviteLink = "https://t.me/telesnap_pro_bot";
       }
    }
 
@@ -61,8 +61,8 @@ public:
    {
       if(m_isLiteMode)
       {
-         m_channelTag = "Powered by TeleSnap Pro - Get on MQL5";
-         m_vipInviteLink = "https://www.mql5.com";
+         m_channelTag = "@telesnap_pro_bot";
+         m_vipInviteLink = "https://t.me/telesnap_pro_bot";
       }
       else
       {
@@ -87,7 +87,7 @@ public:
 
       string displayTag = m_channelTag;
       if(m_isLiteMode)
-         displayTag = "⚡ Powered by TeleSnap Pro (Free MQL5 Edition)";
+         displayTag = "⚡ TeleSnap Lite • Support: @telesnap_pro_bot";
 
       ObjectSetString(chartId, m_watermarkObjName, OBJPROP_TEXT, displayTag);
       ObjectSetString(chartId, m_watermarkObjName, OBJPROP_FONT, "Segoe UI Semibold");
@@ -368,9 +368,10 @@ public:
       // 5. Attribution & Branding
       if(m_isLiteMode)
       {
-         caption += "📢 <b>Powered by TeleSnap Pro</b>\n";
-         caption += "💎 <b>Help & Inquiries:</b> @telesnap_pro_bot\n";
-         caption += "⚡ <i>Get TeleSnap on MQL5 Market: <a href=\"https://www.mql5.com\">mql5.com</a></i>";
+         caption += "📢 <b>TeleSnap Lite</b> • <i>Free MT5 Trade Broadcaster</i>\n";
+         caption += "🤖 <b>Support & Queries:</b> @telesnap_pro_bot\n";
+         caption += "🔗 <a href=\"https://t.me/telesnap_pro_bot\">Chat With Support Bot</a>\n";
+         caption += "👑 <i>Get TeleSnap Pro on MQL5 Market: <a href=\"https://www.mql5.com\">mql5.com</a></i>";
       }
       else
       {
