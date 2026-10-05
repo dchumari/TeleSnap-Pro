@@ -3,15 +3,17 @@
 <div align="center">
 
 [![MQL5 Market Pro](https://img.shields.io/badge/MQL5%20Market-TeleSnap%20Pro%20($99)-FF9900.svg?logo=metatrader5&logoColor=white)](https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
+[![Gumroad Instant Buy](https://img.shields.io/badge/Gumroad-Buy%20TeleSnap%20Pro-FF90E8.svg?logo=gumroad&logoColor=black)](https://dchumari.gumroad.com/l/yinlew)
 [![MQL5 Market Free](https://img.shields.io/badge/MQL5%20Market-TeleSnap%20Free%20Lite-brightgreen.svg?logo=metatrader5&logoColor=white)](https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
 [![GitHub Release](https://img.shields.io/github/v/release/dchumari/TeleSnap-Pro?color=blue&logo=github)](https://github.com/dchumari/TeleSnap-Pro/releases/tag/v2.0.0)
-[![Telegram Support Bot](https://img.shields.io/badge/Telegram-@telesnap__pro__bot-0088cc.svg?logo=telegram&logoColor=white)](https://t.me/telesnap_pro_bot)
+[![Telegram Community](https://img.shields.io/badge/Telegram-@midcodes%20Group-0088cc.svg?logo=telegram&logoColor=white)](https://t.me/midcodes)
+[![Customer Service](https://img.shields.io/badge/Support-TeleSnap%20Customer%20Service-25D366.svg?logo=telegram&logoColor=white)](https://t.me/telesnap_pro_bot)
+[![YouTube Channel](https://img.shields.io/badge/YouTube-@mid--code-FF0000.svg?logo=youtube&logoColor=white)](https://youtube.com/@mid-code)
 [![Security](https://img.shields.io/badge/Security-100%25%20Native%20Zero--DLL-success.svg)](#)
-[![Platform](https://img.shields.io/badge/Platform-MetaTrader%205%20(MT5)-007acc.svg)](#)
 
 **Instant MetaTrader 5 to Telegram signal broadcasting, automated HD chart screenshot capture, and centralized multi-chart command center in under 300 milliseconds. 100% Native MQL5 WebRequest with strictly ZERO DLLs.**
 
-[🎁 Get Free on MQL5](https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap) • [👑 Buy Pro Edition ($99)](https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap) • [📦 Download v2.0.0 (.ex5)](https://github.com/dchumari/TeleSnap-Pro/releases/tag/v2.0.0) • [🤖 Telegram Bot Support](https://t.me/telesnap_pro_bot)
+[👑 Buy on Gumroad (Instant Download)](https://dchumari.gumroad.com/l/yinlew) • [🛍️ Buy on MQL5 Market ($99)](https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap) • [🎁 Free Lite on MQL5](https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap) • [💬 Telegram Community](https://t.me/midcodes) • [🤖 Customer Service Bot](https://t.me/telesnap_pro_bot)
 
 </div>
 
@@ -143,12 +145,14 @@ Need help with setup, licensing inquiries, or command syntax? Our dedicated auto
 ---
 
 ## 🌐 Official Links
-
-* 👑 **TeleSnap Pro on MQL5 Market:** [https://www.mql5.com/en/market/product/198931](https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
-* 🎁 **TeleSnap Free on MQL5 Market:** [https://www.mql5.com/en/market/product/198951](https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
-* 🔍 **Browse TeleSnap MT5 Utilities:** [https://www.mql5.com/en/market/mt5/utility?filter=telesnap](https://www.mql5.com/en/market/mt5/utility?filter=telesnap)
-* 📦 **GitHub Releases & Downloads:** [https://github.com/dchumari/TeleSnap-Pro/releases](https://github.com/dchumari/TeleSnap-Pro/releases)
-* 🤖 **Customer Support Bot:** [@telesnap_pro_bot](https://t.me/telesnap_pro_bot)
+ 
+* 👑 **TeleSnap Pro on Gumroad (Instant Buy):** [https://dchumari.gumroad.com/l/yinlew](https://dchumari.gumroad.com/l/yinlew)
+* 🛍️ **TeleSnap Pro on MQL5 Market:** [https://www.mql5.com/en/market/product/198931](https://www.mql5.com/en/market/product/198931?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
+* 🎁 **TeleSnap Free Lite on MQL5 Market:** [https://www.mql5.com/en/market/product/198951](https://www.mql5.com/en/market/product/198951?source=Site+Market+MT5+Utility+Search+Rating007%3Atelesnap)
+* 💬 **Telegram Community & Signals Group:** [https://t.me/midcodes](https://t.me/midcodes)
+* 🤖 **TeleSnap Pro Customer Service:** [@telesnap_pro_bot](https://t.me/telesnap_pro_bot)
+* 📺 **YouTube Channel:** [@mid-code](https://youtube.com/@mid-code)
+* 📦 **GitHub Repository:** [https://github.com/dchumari/TeleSnap-Pro](https://github.com/dchumari/TeleSnap-Pro)
 
 ---
 
