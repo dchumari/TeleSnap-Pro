@@ -10,8 +10,7 @@
     "audience_tier": "2.5k - 8k",
     "outreach_hook": "Gold scalp execution speed & zero slippage",
     "priority": "High",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 02:43:00"
+    "status": "Pending Outreach"
   },
   {
     "id": 2,
@@ -24,8 +23,7 @@
     "audience_tier": "1.8k - 5k",
     "outreach_hook": "1-click F12 instant chart snap during London/NY open",
     "priority": "High",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 09:00:26"
+    "status": "Pending Outreach"
   },
   {
     "id": 3,
@@ -38,8 +36,7 @@
     "audience_tier": "3.2k - 10k",
     "outreach_hook": "Branded channel watermark on chart photos",
     "priority": "High",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 09:00:38"
+    "status": "Pending Outreach"
   },
   {
     "id": 4,
@@ -52,8 +49,7 @@
     "audience_tier": "4k - 12k",
     "outreach_hook": "Automated TP milestone notifications (+50, +100 pips)",
     "priority": "High",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 09:00:52"
+    "status": "Pending Outreach"
   },
   {
     "id": 5,
@@ -66,8 +62,7 @@
     "audience_tier": "1.5k - 4.5k",
     "outreach_hook": "Instant trade entry snapshot with risk-reward overlay",
     "priority": "Medium",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 09:01:07"
+    "status": "Pending Outreach"
   },
   {
     "id": 6,
@@ -80,8 +75,7 @@
     "audience_tier": "2k - 6k",
     "outreach_hook": "Zero manual crop time when catching 30-pip pullbacks",
     "priority": "High",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 09:01:19"
+    "status": "Pending Outreach"
   },
   {
     "id": 7,
@@ -94,8 +88,7 @@
     "audience_tier": "1.2k - 3.8k",
     "outreach_hook": "300ms signal latency vs 45s phone camera photo",
     "priority": "High",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 14:00:22"
+    "status": "Pending Outreach"
   },
   {
     "id": 8,
@@ -108,8 +101,7 @@
     "audience_tier": "2.8k - 7.5k",
     "outreach_hook": "On-chart commentary notes sent with photo in 1 click",
     "priority": "High",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 14:00:33"
+    "status": "Pending Outreach"
   },
   {
     "id": 9,
@@ -122,8 +114,7 @@
     "audience_tier": "1k - 3k",
     "outreach_hook": "Professional branding to convert free members to VIP",
     "priority": "High",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 14:00:46"
+    "status": "Pending Outreach"
   },
   {
     "id": 10,
@@ -136,8 +127,7 @@
     "audience_tier": "3k - 9k",
     "outreach_hook": "Auto daily recap PnL audit to prove win rate",
     "priority": "Medium",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 14:00:59"
+    "status": "Pending Outreach"
   },
   {
     "id": 11,
@@ -150,8 +140,7 @@
     "audience_tier": "1.5k - 4k",
     "outreach_hook": "Fastest MT5 to Telegram dispatcher on the market",
     "priority": "High",
-    "status": "Contacted",
-    "contacted_at": "2026-10-09 14:01:13"
+    "status": "Pending Outreach"
   },
   {
     "id": 12,
@@ -163,7 +152,8 @@
     "geography": "International",
     "audience_tier": "2.2k - 6.5k",
     "outreach_hook": "Institutional look with custom watermark",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 13,
@@ -175,7 +165,8 @@
     "geography": "US / International",
     "audience_tier": "3.5k - 11k",
     "outreach_hook": "Stop losing 10-15 pips typing out TP and SL",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 14,
@@ -187,7 +178,8 @@
     "geography": "International",
     "audience_tier": "1.8k - 5k",
     "outreach_hook": "1-click chart snap with Entry/SL/TP calculation",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 15,
@@ -199,7 +191,8 @@
     "geography": "International",
     "audience_tier": "2.5k - 7k",
     "outreach_hook": "Broadcast to channel and group simultaneously",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 16,
@@ -211,7 +204,8 @@
     "geography": "International",
     "audience_tier": "1.1k - 3.2k",
     "outreach_hook": "Zero DLL safety for Mac / VPS / Windows terminals",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 17,
@@ -223,7 +217,8 @@
     "geography": "UK / Europe",
     "audience_tier": "4k - 10k",
     "outreach_hook": "Instant capture of 07:00 GMT London open setups",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 18,
@@ -235,7 +230,8 @@
     "geography": "International",
     "audience_tier": "1.7k - 4.8k",
     "outreach_hook": "Clear HD screenshots showing Elliott Wave counts",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 19,
@@ -247,7 +243,8 @@
     "geography": "International",
     "audience_tier": "2.9k - 8k",
     "outreach_hook": "Command center managing Gold + Silver + Oil from 1 chart",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 20,
@@ -259,7 +256,8 @@
     "geography": "Asia / Middle East",
     "audience_tier": "3k - 9.5k",
     "outreach_hook": "Save 1 hour of manual chart posting every day",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 21,
@@ -271,7 +269,8 @@
     "geography": "International",
     "audience_tier": "1.4k - 4.2k",
     "outreach_hook": "Automatic trade close & breakeven alerts",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 22,
@@ -283,7 +282,8 @@
     "geography": "International",
     "audience_tier": "2k - 5.5k",
     "outreach_hook": "Send clean trade setups with 1 click",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 23,
@@ -295,7 +295,8 @@
     "geography": "International",
     "audience_tier": "1.9k - 6k",
     "outreach_hook": "F12 shortcut speed vs phone screenshot",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 24,
@@ -307,7 +308,8 @@
     "geography": "International",
     "audience_tier": "3.1k - 8.5k",
     "outreach_hook": "Automatic Daily Recap auditing total pips won",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 25,
@@ -319,7 +321,8 @@
     "geography": "International",
     "audience_tier": "1.3k - 3.9k",
     "outreach_hook": "Eliminate VIP member complaints about late signals",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 26,
@@ -331,7 +334,8 @@
     "geography": "International",
     "audience_tier": "2.4k - 7k",
     "outreach_hook": "Clean watermark preventing signal thieves from reposting",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 27,
@@ -343,7 +347,8 @@
     "geography": "International",
     "audience_tier": "1.6k - 4.5k",
     "outreach_hook": "Automated order execution snapshots",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 28,
@@ -355,7 +360,8 @@
     "geography": "UK / Europe",
     "audience_tier": "3.8k - 11k",
     "outreach_hook": "Direct channel broadcaster with no external server cost",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 29,
@@ -367,7 +373,8 @@
     "geography": "International",
     "audience_tier": "2.1k - 5.8k",
     "outreach_hook": "Send notes and levels directly from chart HUD",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 30,
@@ -379,7 +386,8 @@
     "geography": "International",
     "audience_tier": "1.2k - 3.5k",
     "outreach_hook": "300ms speed for news trading spikes (CPI / NFP)",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 31,
@@ -391,7 +399,8 @@
     "geography": "International",
     "audience_tier": "2.7k - 7.8k",
     "outreach_hook": "Professional look that justifies premium VIP subscription",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 32,
@@ -403,7 +412,8 @@
     "geography": "International",
     "audience_tier": "1.5k - 4.2k",
     "outreach_hook": "Auto-calculate current floating pips on every snap",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 33,
@@ -415,7 +425,8 @@
     "geography": "International",
     "audience_tier": "3.3k - 9k",
     "outreach_hook": "Whitelabel branding with custom logo watermark",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 34,
@@ -427,7 +438,8 @@
     "geography": "International",
     "audience_tier": "2.3k - 6.2k",
     "outreach_hook": "One keypress F12 transmission to Telegram",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 35,
@@ -439,7 +451,8 @@
     "geography": "International",
     "audience_tier": "1.7k - 4.9k",
     "outreach_hook": "Instant signal delivery with zero DLLs required",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 36,
@@ -451,7 +464,8 @@
     "geography": "International",
     "audience_tier": "3k - 10k",
     "outreach_hook": "Automated trade journaling with HD MT5 screenshots",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 37,
@@ -463,7 +477,8 @@
     "geography": "UK / Europe",
     "audience_tier": "2.2k - 6.5k",
     "outreach_hook": "Capture order blocks & liquidity sweeps in high-res",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 38,
@@ -475,7 +490,8 @@
     "geography": "International",
     "audience_tier": "4k - 12k",
     "outreach_hook": "Daily recap PnL report proving challenge rules compliance",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 39,
@@ -487,7 +503,8 @@
     "geography": "International",
     "audience_tier": "3.5k - 9.5k",
     "outreach_hook": "One-click chart snapshot with custom trader annotations",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 40,
@@ -499,7 +516,8 @@
     "geography": "International",
     "audience_tier": "1.8k - 5.2k",
     "outreach_hook": "Command center managing 10 charts from single panel",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 41,
@@ -511,7 +529,8 @@
     "geography": "UK",
     "audience_tier": "2.5k - 7k",
     "outreach_hook": "Institutional chart aesthetic with channel watermark",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 42,
@@ -523,7 +542,8 @@
     "geography": "International",
     "audience_tier": "2.8k - 8.5k",
     "outreach_hook": "End-of-day audit proving risk management to students",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 43,
@@ -535,7 +555,8 @@
     "geography": "International",
     "audience_tier": "1.9k - 5.8k",
     "outreach_hook": "Send chart evidence when trade hits breakeven",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 44,
@@ -547,7 +568,8 @@
     "geography": "International",
     "audience_tier": "2k - 6k",
     "outreach_hook": "Automated snapshot on every entry, TP, and SL",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 45,
@@ -559,7 +581,8 @@
     "geography": "International",
     "audience_tier": "3.2k - 9k",
     "outreach_hook": "Zero latency signal dispatching across multiple groups",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 46,
@@ -571,7 +594,8 @@
     "geography": "International",
     "audience_tier": "4.5k - 13k",
     "outreach_hook": "Give VIP subscribers institutional-grade execution",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 47,
@@ -583,7 +607,8 @@
     "geography": "International",
     "audience_tier": "1.6k - 4.5k",
     "outreach_hook": "Share trade analysis with custom notes in 1 keypress",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 48,
@@ -595,7 +620,8 @@
     "geography": "International",
     "audience_tier": "2.4k - 7.2k",
     "outreach_hook": "Eliminate trading distractions during live sessions",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 49,
@@ -607,7 +633,8 @@
     "geography": "International",
     "audience_tier": "1.7k - 5k",
     "outreach_hook": "Crystal clear HD capture of Fair Value Gaps",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 50,
@@ -619,7 +646,8 @@
     "geography": "International",
     "audience_tier": "2.9k - 8k",
     "outreach_hook": "Pass evaluations faster with structured signal feeds",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 51,
@@ -631,7 +659,8 @@
     "geography": "UK / International",
     "audience_tier": "1.4k - 4k",
     "outreach_hook": "On-chart HUD HUD button for instant broadcast",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 52,
@@ -643,7 +672,8 @@
     "geography": "International",
     "audience_tier": "2.3k - 6.8k",
     "outreach_hook": "Automatic Daily Recap auditing daily drawdown limits",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 53,
@@ -655,7 +685,8 @@
     "geography": "International",
     "audience_tier": "1.9k - 5.5k",
     "outreach_hook": "Protect signals with custom watermarked screenshots",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 54,
@@ -667,7 +698,8 @@
     "geography": "International",
     "audience_tier": "3.6k - 10.5k",
     "outreach_hook": "Broadcast to channels & forum topic threads simultaneously",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 55,
@@ -679,7 +711,8 @@
     "geography": "International",
     "audience_tier": "2.1k - 6k",
     "outreach_hook": "Snap London/NY killzone setups in sub-second time",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 56,
@@ -691,7 +724,8 @@
     "geography": "International",
     "audience_tier": "1.5k - 4.2k",
     "outreach_hook": "Direct MT5 integration without third-party webhooks",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 57,
@@ -703,7 +737,8 @@
     "geography": "International",
     "audience_tier": "2.6k - 7.5k",
     "outreach_hook": "Zero human delay between chart click and channel post",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 58,
@@ -715,7 +750,8 @@
     "geography": "International",
     "audience_tier": "3.3k - 9.8k",
     "outreach_hook": "Automated profit milestone alerts (+50, +100 pips)",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 59,
@@ -727,7 +763,8 @@
     "geography": "International",
     "audience_tier": "1.3k - 3.8k",
     "outreach_hook": "Free Lite edition with upgrade path to Pro Command Center",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 60,
@@ -739,7 +776,8 @@
     "geography": "International",
     "audience_tier": "2.8k - 8.2k",
     "outreach_hook": "Save hours of daily screenshot manual cropping",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 61,
@@ -751,7 +789,8 @@
     "geography": "International",
     "audience_tier": "1.8k - 5.4k",
     "outreach_hook": "Capture point of interest (POI) entries instantly",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 62,
@@ -763,7 +802,8 @@
     "geography": "International",
     "audience_tier": "2k - 6.1k",
     "outreach_hook": "Institutional look with clean watermark",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 63,
@@ -775,7 +815,8 @@
     "geography": "International",
     "audience_tier": "1.2k - 3.6k",
     "outreach_hook": "Audited win-rate recap sent to Telegram every night",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 64,
@@ -787,7 +828,8 @@
     "geography": "International",
     "audience_tier": "3.1k - 9.1k",
     "outreach_hook": "Instant chart transmission to your VIP telegram",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 65,
@@ -799,7 +841,8 @@
     "geography": "International",
     "audience_tier": "2.4k - 7k",
     "outreach_hook": "1-click snapshot + entry note directly into Telegram",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 66,
@@ -811,7 +854,8 @@
     "geography": "Kenya",
     "audience_tier": "3k - 12k",
     "outreach_hook": "Local Kenyan software engineering innovation for MT5",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 67,
@@ -823,7 +867,8 @@
     "geography": "Kenya",
     "audience_tier": "1.5k - 4.8k",
     "outreach_hook": "Built in Nairobi for local VIP signal providers",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 68,
@@ -835,7 +880,8 @@
     "geography": "Kenya",
     "audience_tier": "2k - 6k",
     "outreach_hook": "Zero latency Gold signals for local VIP groups",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 69,
@@ -847,7 +893,8 @@
     "geography": "Kenya / EA",
     "audience_tier": "4k - 14k",
     "outreach_hook": "Professionalizing African signal channels with automated MT5 HUD",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 70,
@@ -859,7 +906,8 @@
     "geography": "Kenya",
     "audience_tier": "1.2k - 3.8k",
     "outreach_hook": "High-res chart sharing directly to student telegram groups",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 71,
@@ -871,7 +919,8 @@
     "geography": "Kenya",
     "audience_tier": "2.8k - 8k",
     "outreach_hook": "Eliminate signal delay between MT5 execution and Telegram",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 72,
@@ -883,7 +932,8 @@
     "geography": "Kenya",
     "audience_tier": "1k - 3.2k",
     "outreach_hook": "Fastest chart dispatcher for MT5 terminals",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 73,
@@ -895,7 +945,8 @@
     "geography": "Kenya",
     "audience_tier": "2.2k - 6.5k",
     "outreach_hook": "Automated daily recap proving trades to community",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 74,
@@ -907,7 +958,8 @@
     "geography": "Kenya",
     "audience_tier": "1.8k - 5k",
     "outreach_hook": "1-click F12 snap during volatile NY open sessions",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 75,
@@ -919,7 +971,8 @@
     "geography": "Kenya",
     "audience_tier": "1.6k - 4.5k",
     "outreach_hook": "Institutional trading audit & trade journal snapshots",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 76,
@@ -931,7 +984,8 @@
     "geography": "Kenya",
     "audience_tier": "800 - 2.5k",
     "outreach_hook": "Free community edition with local Kenyan developer support",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 77,
@@ -943,7 +997,8 @@
     "geography": "Kenya",
     "audience_tier": "3.5k - 9.5k",
     "outreach_hook": "Tool for mentors to broadcast live chart markups to students",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 78,
@@ -955,7 +1010,8 @@
     "geography": "Kenya",
     "audience_tier": "4k - 15k",
     "outreach_hook": "Works seamlessly across MT5 synthetic indices & FX pairs",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 79,
@@ -967,7 +1023,8 @@
     "geography": "Kenya",
     "audience_tier": "1.4k - 4k",
     "outreach_hook": "Save your traders 15 pips of slippage on fast moves",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 80,
@@ -979,7 +1036,8 @@
     "geography": "Kenya",
     "audience_tier": "700 - 2.2k",
     "outreach_hook": "Support local tech innovation on MQL5 Marketplace",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 81,
@@ -991,7 +1049,8 @@
     "geography": "Kenya",
     "audience_tier": "2.1k - 6k",
     "outreach_hook": "Whitelabel branding with your custom channel handle",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 82,
@@ -1003,7 +1062,8 @@
     "geography": "East Africa",
     "audience_tier": "2.5k - 7.5k",
     "outreach_hook": "Cross-border trading community signal broadcast hub",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 83,
@@ -1015,7 +1075,8 @@
     "geography": "East Africa",
     "audience_tier": "1.9k - 5.5k",
     "outreach_hook": "Instant signal delivery with zero DLLs required",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 84,
@@ -1027,7 +1088,8 @@
     "geography": "Kenya",
     "audience_tier": "1.7k - 4.8k",
     "outreach_hook": "300ms Gold execution to beat market spikes",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 85,
@@ -1039,7 +1101,8 @@
     "geography": "Kenya",
     "audience_tier": "2.9k - 8.2k",
     "outreach_hook": "Automatic TP milestones (+50, +100 pips) notifications",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 86,
@@ -1051,7 +1114,8 @@
     "geography": "Kenya",
     "audience_tier": "3.2k - 9k",
     "outreach_hook": "Manage crypto and currency pairs from one screen",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 87,
@@ -1063,7 +1127,8 @@
     "geography": "Kenya",
     "audience_tier": "1.3k - 3.9k",
     "outreach_hook": "1-click snapshot + entry notes directly to channel",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 88,
@@ -1075,7 +1140,8 @@
     "geography": "Kenya",
     "audience_tier": "1.8k - 5.2k",
     "outreach_hook": "Daily recap PnL report to show funded progress",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 89,
@@ -1087,7 +1153,8 @@
     "geography": "Kenya",
     "audience_tier": "2.4k - 7.1k",
     "outreach_hook": "Zero latency signal dispatching across all channels",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 90,
@@ -1099,7 +1166,8 @@
     "geography": "Kenya",
     "audience_tier": "3k - 8.5k",
     "outreach_hook": "Give students clean visual setups without phone photos",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 91,
@@ -1111,7 +1179,8 @@
     "geography": "South Africa",
     "audience_tier": "5k - 18k",
     "outreach_hook": "Professionalizing VIP signals with instant MT5 capture",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 92,
@@ -1123,7 +1192,8 @@
     "geography": "South Africa",
     "audience_tier": "2.5k - 7.5k",
     "outreach_hook": "Fastest F12 chart snapper for volatile NASDAQ sessions",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 93,
@@ -1135,7 +1205,8 @@
     "geography": "Nigeria",
     "audience_tier": "4k - 15k",
     "outreach_hook": "Zero latency signal dispatching to beat network delays",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 94,
@@ -1147,7 +1218,8 @@
     "geography": "Nigeria",
     "audience_tier": "3.2k - 9k",
     "outreach_hook": "Automatic Daily Recap auditing daily performance",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 95,
@@ -1159,7 +1231,8 @@
     "geography": "South Africa",
     "audience_tier": "1.8k - 5.5k",
     "outreach_hook": "Custom channel branding watermark on every chart photo",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 96,
@@ -1171,7 +1244,8 @@
     "geography": "Nigeria",
     "audience_tier": "2.2k - 6.8k",
     "outreach_hook": "Send notes and levels directly from on-chart HUD",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 97,
@@ -1183,7 +1257,8 @@
     "geography": "South Africa",
     "audience_tier": "3.8k - 11k",
     "outreach_hook": "300ms speed during high-volatility Nasdaq openings",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 98,
@@ -1195,7 +1270,8 @@
     "geography": "Nigeria",
     "audience_tier": "2.7k - 8k",
     "outreach_hook": "Automated journal entries with clean MT5 screenshots",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 99,
@@ -1207,7 +1283,8 @@
     "geography": "South Africa",
     "audience_tier": "1.5k - 4.5k",
     "outreach_hook": "1-click snapshot + entry note directly into Telegram",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 100,
@@ -1219,7 +1296,8 @@
     "geography": "Ghana",
     "audience_tier": "2k - 6k",
     "outreach_hook": "Whitelabel branding to justify premium VIP subscriptions",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 101,
@@ -1231,7 +1309,8 @@
     "geography": "South Africa",
     "audience_tier": "3.1k - 8.8k",
     "outreach_hook": "Capture order blocks & liquidity sweeps in high-res",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 102,
@@ -1243,7 +1322,8 @@
     "geography": "West Africa",
     "audience_tier": "2.4k - 7k",
     "outreach_hook": "Manage multiple charts and instruments from 1 command center",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 103,
@@ -1255,7 +1335,8 @@
     "geography": "South Africa",
     "audience_tier": "1.6k - 4.8k",
     "outreach_hook": "Broadcast to channel and group simultaneously",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 104,
@@ -1267,7 +1348,8 @@
     "geography": "Nigeria",
     "audience_tier": "1.9k - 5.6k",
     "outreach_hook": "Zero DLL safety for VPS and trading terminals",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 105,
@@ -1279,7 +1361,8 @@
     "geography": "South Africa",
     "audience_tier": "2.8k - 8.2k",
     "outreach_hook": "Prove trading discipline with nightly audited recap",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 106,
@@ -1291,7 +1374,8 @@
     "geography": "Nigeria",
     "audience_tier": "1.3k - 3.8k",
     "outreach_hook": "Free community edition with upgrade path to Pro",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 107,
@@ -1303,7 +1387,8 @@
     "geography": "South Africa",
     "audience_tier": "3.5k - 10k",
     "outreach_hook": "Institutional-grade presentation for high-net-worth VIPs",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 108,
@@ -1315,7 +1400,8 @@
     "geography": "Nigeria",
     "audience_tier": "4.2k - 13k",
     "outreach_hook": "Send Volatility 75 / Boom / Crash snaps in 300ms",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 109,
@@ -1327,7 +1413,8 @@
     "geography": "South Africa",
     "audience_tier": "1.1k - 3.2k",
     "outreach_hook": "F12 key shortcut vs slow phone photography",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 110,
@@ -1339,7 +1426,8 @@
     "geography": "Nigeria",
     "audience_tier": "1.7k - 4.9k",
     "outreach_hook": "Share markups with students instantly from MT5",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 111,
@@ -1351,7 +1439,8 @@
     "geography": "South Africa",
     "audience_tier": "4.8k - 14k",
     "outreach_hook": "Eliminate slippage during 16:30 SAST market opens",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 112,
@@ -1363,7 +1452,8 @@
     "geography": "Ghana",
     "audience_tier": "1.4k - 4.2k",
     "outreach_hook": "Save hours of daily screenshot cropping and editing",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 113,
@@ -1375,7 +1465,8 @@
     "geography": "Pan-African",
     "audience_tier": "5.5k - 16k",
     "outreach_hook": "Institutional trading hub connecting multiple channels",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 114,
@@ -1387,7 +1478,8 @@
     "geography": "Nigeria",
     "audience_tier": "1.2k - 3.5k",
     "outreach_hook": "Low-bandwidth reliable HTTP transmission via MT5 WebRequest",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 115,
@@ -1399,7 +1491,8 @@
     "geography": "South Africa",
     "audience_tier": "2.3k - 6.5k",
     "outreach_hook": "Instant signal delivery with zero DLLs required",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 116,
@@ -1411,7 +1504,8 @@
     "geography": "International",
     "audience_tier": "3.5k - 11k",
     "outreach_hook": "Capture fast US30 opening bell volatility in 300ms",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 117,
@@ -1423,7 +1517,8 @@
     "geography": "US / International",
     "audience_tier": "4k - 12.5k",
     "outreach_hook": "Stop losing 25 index points while typing out alerts",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 118,
@@ -1435,7 +1530,8 @@
     "geography": "Germany / Europe",
     "audience_tier": "2.2k - 6.8k",
     "outreach_hook": "European market open speed and precision",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 119,
@@ -1447,7 +1543,8 @@
     "geography": "International",
     "audience_tier": "2.8k - 8k",
     "outreach_hook": "1-click F12 snapshot with floating PnL calculation",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 120,
@@ -1459,7 +1556,8 @@
     "geography": "International",
     "audience_tier": "3k - 9.2k",
     "outreach_hook": "Automatic TP milestones (+50, +100 points)",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 121,
@@ -1471,7 +1569,8 @@
     "geography": "International",
     "audience_tier": "2.4k - 7.5k",
     "outreach_hook": "Whitelabel branding to protect your setups",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 122,
@@ -1483,7 +1582,8 @@
     "geography": "International",
     "audience_tier": "1.7k - 5.2k",
     "outreach_hook": "Command center managing US30 + NAS100 + SPX500 together",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 123,
@@ -1495,7 +1595,8 @@
     "geography": "International",
     "audience_tier": "3.3k - 9.8k",
     "outreach_hook": "Sub-second speed for fast intraday runners",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 124,
@@ -1507,7 +1608,8 @@
     "geography": "UK / US",
     "audience_tier": "2.9k - 8.4k",
     "outreach_hook": "Send notes and levels directly from on-chart HUD",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 125,
@@ -1519,7 +1621,8 @@
     "geography": "US / International",
     "audience_tier": "1.5k - 4.5k",
     "outreach_hook": "Clean visual verification on every trade entry",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 126,
@@ -1531,7 +1634,8 @@
     "geography": "International",
     "audience_tier": "2.1k - 6.2k",
     "outreach_hook": "Zero DLL safety for VPS and MT5 terminals",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 127,
@@ -1543,7 +1647,8 @@
     "geography": "International",
     "audience_tier": "2.6k - 7.6k",
     "outreach_hook": "Auto daily recap PnL report proving trading consistency",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 128,
@@ -1555,7 +1660,8 @@
     "geography": "Germany / Europe",
     "audience_tier": "1.8k - 5.5k",
     "outreach_hook": "Instant capture of 08:00 CET Frankfurt opening surges",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 129,
@@ -1567,7 +1673,8 @@
     "geography": "US / UK",
     "audience_tier": "4.2k - 12k",
     "outreach_hook": "Eliminate delay between terminal and Telegram channel",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 130,
@@ -1579,7 +1686,8 @@
     "geography": "International",
     "audience_tier": "3.1k - 9k",
     "outreach_hook": "Whitelabel branding with your custom logo watermark",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 131,
@@ -1591,7 +1699,8 @@
     "geography": "International",
     "audience_tier": "1.6k - 4.8k",
     "outreach_hook": "1-click snapshot + entry notes directly to channel",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 132,
@@ -1603,7 +1712,8 @@
     "geography": "US / International",
     "audience_tier": "3.7k - 10.5k",
     "outreach_hook": "Capture rapid 100-point moves with zero manual typing",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 133,
@@ -1615,7 +1725,8 @@
     "geography": "International",
     "audience_tier": "2.2k - 6.5k",
     "outreach_hook": "Broadcast to channel and group simultaneously",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 134,
@@ -1627,7 +1738,8 @@
     "geography": "International",
     "audience_tier": "2.5k - 7.2k",
     "outreach_hook": "Zero latency signal dispatching across all channels",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 135,
@@ -1639,7 +1751,8 @@
     "geography": "International",
     "audience_tier": "1.9k - 5.8k",
     "outreach_hook": "Instant signal delivery with zero DLLs required",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 136,
@@ -1651,7 +1764,8 @@
     "geography": "UK / Europe",
     "audience_tier": "5k - 15k",
     "outreach_hook": "Institutional trading aesthetic for high-paying subscribers",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 137,
@@ -1663,7 +1777,8 @@
     "geography": "UK",
     "audience_tier": "2.5k - 7k",
     "outreach_hook": "Whitelabel custom branding & zero human latency",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 138,
@@ -1675,7 +1790,8 @@
     "geography": "Dubai / UAE",
     "audience_tier": "4k - 12k",
     "outreach_hook": "Command center managing multi-terminal trade flows",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 139,
@@ -1687,7 +1803,8 @@
     "geography": "Switzerland / EU",
     "audience_tier": "1.8k - 5.5k",
     "outreach_hook": "Swiss precision execution and clean watermark",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 140,
@@ -1699,7 +1816,8 @@
     "geography": "Nordics / EU",
     "audience_tier": "2.2k - 6.5k",
     "outreach_hook": "Direct MT5 integration without third-party webhooks",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 141,
@@ -1711,7 +1829,8 @@
     "geography": "Germany / EU",
     "audience_tier": "3.1k - 8.8k",
     "outreach_hook": "Automated Daily Recap auditing daily performance",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 142,
@@ -1723,7 +1842,8 @@
     "geography": "Singapore / Asia",
     "audience_tier": "3.5k - 10.2k",
     "outreach_hook": "Manage multi-currency majors and cross rates seamlessly",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 143,
@@ -1735,7 +1855,8 @@
     "geography": "Europe",
     "audience_tier": "1.5k - 4.2k",
     "outreach_hook": "Zero DLL security complying with institutional compliance",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 144,
@@ -1747,7 +1868,8 @@
     "geography": "UK",
     "audience_tier": "4.8k - 14k",
     "outreach_hook": "Stop losing 10-15 pips while typing out trade alerts",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 145,
@@ -1759,7 +1881,8 @@
     "geography": "Australia",
     "audience_tier": "2.4k - 7k",
     "outreach_hook": "Sub-second speed on Asian/Sydney market opening liquidity",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 146,
@@ -1771,7 +1894,8 @@
     "geography": "Japan / Asia",
     "audience_tier": "3k - 8.5k",
     "outreach_hook": "1-click snapshot with JPY pip calculation",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 147,
@@ -1783,7 +1907,8 @@
     "geography": "Netherlands / EU",
     "audience_tier": "1.9k - 5.8k",
     "outreach_hook": "Automated TP milestone notifications (+50, +100 pips)",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 148,
@@ -1795,7 +1920,8 @@
     "geography": "Canada",
     "audience_tier": "2.8k - 8.2k",
     "outreach_hook": "Automatic Daily Recap auditing daily performance",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 149,
@@ -1807,7 +1933,8 @@
     "geography": "Switzerland",
     "audience_tier": "1.4k - 4.1k",
     "outreach_hook": "Institutional visual appeal and custom watermark",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 150,
@@ -1819,7 +1946,8 @@
     "geography": "Hong Kong / Asia",
     "audience_tier": "3.6k - 10.5k",
     "outreach_hook": "Save your traders 15 pips of slippage on fast moves",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 151,
@@ -1831,7 +1959,8 @@
     "geography": "Austria / EU",
     "audience_tier": "1.7k - 5k",
     "outreach_hook": "1-click snapshot + entry notes directly to channel",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 152,
@@ -1843,7 +1972,8 @@
     "geography": "Spain / EU",
     "audience_tier": "2.6k - 7.5k",
     "outreach_hook": "Broadcast to channel and group simultaneously",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 153,
@@ -1855,7 +1985,8 @@
     "geography": "Italy / EU",
     "audience_tier": "2.1k - 6.2k",
     "outreach_hook": "Whitelabel branding to justify premium VIP subscriptions",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Pending Outreach"
   },
   {
     "id": 154,
@@ -1867,7 +1998,8 @@
     "geography": "Ireland / EU",
     "audience_tier": "1.8k - 5.4k",
     "outreach_hook": "Zero latency signal dispatching across all channels",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   },
   {
     "id": 155,
@@ -1879,6 +2011,7 @@
     "geography": "Belgium / EU",
     "audience_tier": "2.3k - 6.8k",
     "outreach_hook": "Instant signal delivery with zero DLLs required",
-    "priority": "High"
+    "priority": "High",
+    "status": "Pending Outreach"
   }
 ]

@@ -119,6 +119,58 @@ def generate_personalized_message(lead):
             "We are providing pilot licenses to selected desks this week. Would you like a demo activation for your terminal?"
         )
 
+def load_telegram_credentials():
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env_path = os.path.join(base_dir, ".env")
+    api_id = None
+    api_hash = None
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("TELEGRAM_API_ID="):
+                    api_id = line.split("=", 1)[1].strip().strip('"').strip("'")
+                elif line.startswith("TELEGRAM_API_HASH="):
+                    api_hash = line.split("=", 1)[1].strip().strip('"').strip("'")
+    return api_id, api_hash
+
+async def send_via_telethon(api_id, api_hash, batch):
+    from telethon import TelegramClient
+    session_file = os.path.join(BASE_DIR, "telethon_session")
+    client = TelegramClient(session_file, int(api_id), api_hash)
+    await client.start()
+    
+    leads = load_leads()
+    sent_count = 0
+    for lead in batch:
+        admin_handle = lead.get("admin_contact", "").replace("@", "").strip()
+        channel = lead.get("channel_name", "")
+        lead_id = lead.get("id")
+
+        if not admin_handle:
+            continue
+
+        message = generate_personalized_message(lead)
+        log_event(f"📤 [Telethon API] Dispatching to Lead #{lead_id} ({channel} - @{admin_handle})...")
+        try:
+            await client.send_message(admin_handle, message)
+            log_event(f"✅ [Telethon API] Verified delivery to @{admin_handle}!")
+            sent_count += 1
+
+            for l in leads:
+                if l.get("id") == lead_id:
+                    l["status"] = "Contacted"
+                    l["contacted_at"] = time.strftime('%Y-%m-%d %H:%M:%S')
+            save_leads(leads)
+
+        except Exception as e:
+            log_event(f"⚠️ [Telethon API] Failed to send to @{admin_handle}: {e}")
+
+        delay = random.uniform(8.0, 15.0)
+        await asyncio.sleep(delay)
+
+    await client.disconnect()
+    return sent_count
+
 def execute_telegram_batch(batch_size=5):
     log_event(f"🚀 Initializing Autonomous Telegram Outreach (Target Batch: {batch_size} leads)...")
     leads = load_leads()
@@ -129,62 +181,19 @@ def execute_telegram_batch(batch_size=5):
         return 0
 
     batch = pending[:batch_size]
-    sent_count = 0
 
-    try:
-        import pyautogui
-        import pyperclip
-        pyautogui.FAILSAFE = False
-    except ImportError:
-        log_event("⚠️ pyautogui or pyperclip missing, installing...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyautogui", "pyperclip"])
-        import pyautogui
-        import pyperclip
-        pyautogui.FAILSAFE = False
-
-    for lead in batch:
-        admin_handle = lead.get("admin_contact", "").replace("@", "").strip()
-        channel = lead.get("channel_name", "")
-        lead_id = lead.get("id")
-
-        if not admin_handle:
-            continue
-
-        message = generate_personalized_message(lead)
-        log_event(f"📤 Preparing DM for Lead #{lead_id} ({channel} - @{admin_handle})...")
-
-        # Copy to clipboard
-        pyperclip.copy(message)
-
-        # Summon Telegram chat via Windows protocol
-        tg_url = f"tg://resolve?domain={admin_handle}"
-        os.system(f"start {tg_url}")
-
-        # Wait for Telegram desktop window to open and focus
-        time.sleep(3.5)
-
-        # Paste message and send
+    api_id, api_hash = load_telegram_credentials()
+    if api_id and api_hash:
         try:
-            pyautogui.hotkey('ctrl', 'v')
-            time.sleep(1.0)
-            pyautogui.press('enter')
-            log_event(f"✅ Dispatched DM to @{admin_handle} via Telegram Desktop!")
-            sent_count += 1
-
-            lead["status"] = "Contacted"
-            lead["contacted_at"] = time.strftime('%Y-%m-%d %H:%M:%S')
-            save_leads(leads)
-
+            return asyncio.run(send_via_telethon(api_id, api_hash, batch))
         except Exception as e:
-            log_event(f"⚠️ Error sending to @{admin_handle}: {e}")
-
-        # Safe randomized anti-spam delay
-        delay = random.uniform(6.0, 10.0)
-        log_event(f"⏳ Cooling down for {delay:.1f}s to preserve account safety...")
-        time.sleep(delay)
-
-    log_event(f"🎉 Telegram batch completed: {sent_count} messages sent successfully.")
-    return sent_count
+            log_event(f"⚠️ Telethon execution error: {e}")
+            return 0
+    else:
+        log_event("ℹ️ Telegram MTProto credentials (TELEGRAM_API_ID & TELEGRAM_API_HASH) not yet configured in .env.")
+        log_event("👉 To send DMs directly in background: get API keys from my.telegram.org and add to .env.")
+        log_event("👉 Alternatively, open Telegram Desktop and use 'python Marketing_Campaign/dm_outreach_assistant.py' for 1-click clipboard dispatch.")
+        return 0
 
 # =========================================================================
 # MODULE 2: AUTONOMOUS TWITTER / X POSTING ENGINE (ZENDRIVER)
