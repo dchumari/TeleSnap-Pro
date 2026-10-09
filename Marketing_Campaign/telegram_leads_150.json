@@ -93,7 +93,9 @@
     "geography": "International",
     "audience_tier": "1.2k - 3.8k",
     "outreach_hook": "300ms signal latency vs 45s phone camera photo",
-    "priority": "High"
+    "priority": "High",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 14:00:22"
   },
   {
     "id": 8,
@@ -105,7 +107,9 @@
     "geography": "UK",
     "audience_tier": "2.8k - 7.5k",
     "outreach_hook": "On-chart commentary notes sent with photo in 1 click",
-    "priority": "High"
+    "priority": "High",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 14:00:33"
   },
   {
     "id": 9,
@@ -117,7 +121,9 @@
     "geography": "International",
     "audience_tier": "1k - 3k",
     "outreach_hook": "Professional branding to convert free members to VIP",
-    "priority": "High"
+    "priority": "High",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 14:00:46"
   },
   {
     "id": 10,
@@ -129,7 +135,9 @@
     "geography": "International",
     "audience_tier": "3k - 9k",
     "outreach_hook": "Auto daily recap PnL audit to prove win rate",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 14:00:59"
   },
   {
     "id": 11,
@@ -141,7 +149,9 @@
     "geography": "International",
     "audience_tier": "1.5k - 4k",
     "outreach_hook": "Fastest MT5 to Telegram dispatcher on the market",
-    "priority": "High"
+    "priority": "High",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 14:01:13"
   },
   {
     "id": 12,
