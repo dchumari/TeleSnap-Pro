@@ -23,7 +23,9 @@
     "geography": "International",
     "audience_tier": "1.8k - 5k",
     "outreach_hook": "1-click F12 instant chart snap during London/NY open",
-    "priority": "High"
+    "priority": "High",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 09:00:26"
   },
   {
     "id": 3,
@@ -35,7 +37,9 @@
     "geography": "Dubai / UAE",
     "audience_tier": "3.2k - 10k",
     "outreach_hook": "Branded channel watermark on chart photos",
-    "priority": "High"
+    "priority": "High",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 09:00:38"
   },
   {
     "id": 4,
@@ -47,7 +51,9 @@
     "geography": "UK / Europe",
     "audience_tier": "4k - 12k",
     "outreach_hook": "Automated TP milestone notifications (+50, +100 pips)",
-    "priority": "High"
+    "priority": "High",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 09:00:52"
   },
   {
     "id": 5,
@@ -59,7 +65,9 @@
     "geography": "International",
     "audience_tier": "1.5k - 4.5k",
     "outreach_hook": "Instant trade entry snapshot with risk-reward overlay",
-    "priority": "Medium"
+    "priority": "Medium",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 09:01:07"
   },
   {
     "id": 6,
@@ -71,7 +79,9 @@
     "geography": "International",
     "audience_tier": "2k - 6k",
     "outreach_hook": "Zero manual crop time when catching 30-pip pullbacks",
-    "priority": "High"
+    "priority": "High",
+    "status": "Contacted",
+    "contacted_at": "2026-10-09 09:01:19"
   },
   {
     "id": 7,
