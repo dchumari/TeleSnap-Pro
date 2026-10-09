@@ -217,11 +217,25 @@ TWITTER_PROMPTS = [
 ]
 
 async def execute_twitter_post():
-    log_event("🐦 Initializing Autonomous Twitter / X Posting via zendriver...")
+    log_event("🐦 Checking Autonomous Twitter / X Posting Bridge...")
+    import urllib.request
+    
+    # Check if Chrome Remote Debugging port 9222 is active
+    port_open = False
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:9222/json/version", timeout=1.5) as resp:
+            if resp.status == 200:
+                port_open = True
+    except Exception:
+        port_open = False
+
+    if not port_open:
+        log_event("ℹ️ Chrome debugging bridge on port 9222 not active. Run 'launch_chrome_agent.bat' once to enable live Twitter thread dispatching.")
+        return
+
     try:
         import zendriver as zd
     except ImportError:
-        log_event("⚠️ zendriver missing, installing...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "zendriver"])
         import zendriver as zd
 
@@ -230,37 +244,28 @@ async def execute_twitter_post():
     tweet_content = TWITTER_PROMPTS[tweet_idx]
 
     try:
-        # Connect to existing Chrome or launch using User Data Profile 1
-        user_data = "C:\\Users\\user\\AppData\\Local\\Google\\Chrome\\User Data"
-        browser = await zd.start(
-            browser_executable_path="C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-            headless=False,
-            browser_args=["--profile-directory=Profile 1", "--remote-debugging-port=9222"]
-        )
+        browser = await zd.start(host="127.0.0.1", port=9222)
         page = await browser.get("https://x.com/compose/post")
-        await asyncio.sleep(4)
+        await asyncio.sleep(3)
 
-        log_event(f"📝 Posting Tweet #{tweet_idx + 1}...")
         editor = await page.select('div[data-testid="tweetTextarea_0"]')
         if editor:
+            log_event(f"📝 Publishing Tweet #{tweet_idx + 1}...")
             await editor.send_keys(tweet_content)
             await asyncio.sleep(2)
-        else:
-            log_event("⚠️ Tweet composer textarea not detected.")
 
-        # Click post button
-        post_btn = await page.select('button[data-testid="tweetButton"]')
-        if post_btn:
-            await post_btn.click()
-            log_event("✅ Successfully published tweet to Twitter / X!")
-            state["last_tweet_index"] = tweet_idx + 1
-            save_state(state)
+            post_btn = await page.select('button[data-testid="tweetButton"]')
+            if post_btn:
+                await post_btn.click()
+                log_event("✅ Successfully posted tweet to Twitter / X!")
+                state["last_tweet_index"] = tweet_idx + 1
+                save_state(state)
         else:
-            log_event("⚠️ Post button not found or already published.")
+            log_event("⚠️ Tweet composer not detected in active tab.")
 
         await browser.stop()
     except Exception as e:
-        log_event(f"⚠️ Twitter posting encountered note: {e}")
+        log_event(f"⚠️ Twitter posting note: {e}")
 
 # =========================================================================
 # MASTER DISPATCHER
